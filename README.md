@@ -1,5 +1,4 @@
 #TodoAPI
-# TaskManagement API
 
 Una API RESTful desarrollada en ASP.NET Core con arquitectura en capas y un modelo genérico para gestionar tareas de distintos tipos de datos.
 
