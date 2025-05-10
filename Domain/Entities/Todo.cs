@@ -1,5 +1,6 @@
 ﻿
 using Domain.Enums;
+using Domain.Delegates;
 
 namespace Domain.Entities
 {
@@ -15,12 +16,18 @@ namespace Domain.Entities
         public T? AdditionalData { get; private set; }
 
 
-        private Todo() { }
+
+        private static readonly TodoValidator<Todo<T>> _validate = todo =>
+        !string.IsNullOrWhiteSpace(todo.Title) 
+        && !string.IsNullOrWhiteSpace(todo.Status)
+        && (!todo.DueDate.HasValue || todo.DueDate > DateTime.UtcNow);
+
+        
 
         public Todo(string title, string description, DateTime? dueDate, T? additionalData, string status)
         {
-            if (string.IsNullOrWhiteSpace(title))
-                throw new Exceptions.DomainException("Title cannot be empty.");
+            if (!_validate(this))
+                throw new Exceptions.DomainException("Validación fallida: Title, Status o DueDate inválidos.");
 
             Title = title;
             Description = description;
@@ -33,11 +40,9 @@ namespace Domain.Entities
 
         public void Update(string title, string description, DateTime? dueDate, T? additionalData, string status, bool iscompleted )
         {
-            if (string.IsNullOrWhiteSpace(title))
-                throw new Exceptions.DomainException("Title cannot be empty.");
+            if (!_validate(this))
+                throw new Exceptions.DomainException("Validación fallida al actualizar entidad.");
 
-            if (string.IsNullOrWhiteSpace(status))
-                throw new Exceptions.DomainException("Status cannot be empty.");
 
             Title = title;
             Description = description;

@@ -13,5 +13,7 @@ namespace Application.DTOs
         public bool IsCompleted { get; set; }
         public string Status { get; set; } = string.Empty;
         public T? AdditionalData { get; set; }
+        public int DaysRemaining { get; set; }
+
     }
 }

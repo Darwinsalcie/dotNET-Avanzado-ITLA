@@ -48,6 +48,31 @@ namespace API.Controllers
             return Ok(updated);
         }
 
+
+
+        [HttpGet("pending")]
+        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> GetPending()
+        {
+            var todos = await _service.GetPendingAsync();
+            return Ok(todos);
+        }
+
+        [HttpGet("overdue")]
+        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> GetOverdue()
+        {
+            var todos = await _service.GetOverdueAsync();
+            return Ok(todos);
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> Search(string keyword)
+        {
+            var todos = await _service.SearchAsync(keyword);
+            return Ok(todos);
+        }
+
+
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

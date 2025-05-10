@@ -15,5 +15,7 @@ namespace Application.DTOs
         public DateTime? DueDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public T? AdditionalData { get; set; }
+
+
     }
 }
