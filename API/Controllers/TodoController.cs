@@ -1,85 +1,33 @@
-﻿
+﻿using Application.Interfaces;
+using Application.Services;
+using Domain.DTOs;
+using Domain.Entities;
+using Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Application.DTOs;
-using Application.Interfaces;
 
 namespace API.Controllers
 {
-[ApiController]
     [Route("api/[controller]")]
-    public class TodosController : ControllerBase
+    [ApiController]
+    public class TodoController : ControllerBase
     {
-        private readonly ITodoService<string> _service;
+        //Acá supongo que debería inyectase una interfaz para desacoplar el controlador de la implementación concreta
+        //Pero mientras tanto, lo dejo así para que funcione
+        private readonly ITodoService _todoService;
+        public TodoController(ITodoService todoService)
+            => _todoService = todoService;
 
-        public TodosController(ITodoService<string> service)
-        {
-            _service = service;
-        }
-
+        // GET: api/Todo
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> GetAll()
-        {
-            var todos = await _service.GetAllAsync();
-            return Ok(todos);
-        }
+        public async Task<ActionResult<Response<Todo>>> GetTodoAllAsync()
+            => await _todoService.GetTodoAllAsync();
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<TodoDto<string>>> GetById(int id)
-        {
-            var todo = await _service.GetByIdAsync(id);
-            if (todo == null)
-                return NotFound();
-            return Ok(todo);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<TodoDto<string>>> Create(CreateTodoDto<string> dto)
-        {
-            var created = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
-
-        [HttpPut("{id:int}")]
-        public async Task<ActionResult<TodoDto<string>>> Update(int id, UpdateTodoDto<string> dto)
-        {
-            var updated = await _service.UpdateAsync(id, dto);
-            if (updated == null)
-                return NotFound();
-            return Ok(updated);
-        }
+        // GET: api/Todo/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Response<Todo>>> GetTodoByIdAsync(int id)
+            => await _todoService.GetTodoByIdAsync(id);
 
 
 
-        [HttpGet("pending")]
-        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> GetPending()
-        {
-            var todos = await _service.GetPendingAsync();
-            return Ok(todos);
-        }
-
-        [HttpGet("overdue")]
-        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> GetOverdue()
-        {
-            var todos = await _service.GetOverdueAsync();
-            return Ok(todos);
-        }
-
-        [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<TodoDto<string>>>> Search(string keyword)
-        {
-            var todos = await _service.SearchAsync(keyword);
-            return Ok(todos);
-        }
-
-
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var deleted = await _service.DeleteAsync(id);
-            if (!deleted)
-                return NotFound();
-            return NoContent();
-        }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using Domain.Enums;
 
 
-namespace Application.DTOs
+namespace Application.DTOs.Response
 {
-    public class TodoDto<T>
+    public class TodoResponseDTO
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -11,9 +11,9 @@ namespace Application.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime? DueDate { get; set; }
         public bool IsCompleted { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public T? AdditionalData { get; set; }
-        public int DaysRemaining { get; set; }
+        public string? Status { get; set; }
+        public string? AdditionalData { get; set; }
+        public DateTime? DaysRemaining { get; set; }
 
     }
 }

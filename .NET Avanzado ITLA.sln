@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Domain", "Domain\Domain.csp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{FBAFEF32-F9FD-4750-A222-C0F4F22A4203}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infraestructure", "Infraestructure\Infraestructure.csproj", "{7F490203-BB78-4C12-A2C2-D28DA65E6C15}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infraestructure\Infrastructure.csproj", "{7F490203-BB78-4C12-A2C2-D28DA65E6C15}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infraestructure", "Infraestructure", "{AAC4D88F-AA4F-4207-8BE1-BA128D8ED753}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{AAC4D88F-AA4F-4207-8BE1-BA128D8ED753}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{7674169E-41D4-4A6E-BE5B-E26B003E70DF}"
 EndProject

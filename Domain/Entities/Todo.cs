@@ -4,31 +4,21 @@ using Domain.Delegates;
 
 namespace Domain.Entities
 {
-    public class Todo<T>
+    public class Todo
     {
-        public int Id { get; private set; }
-        public string Title { get; private set; } = string.Empty;
-        public string Description { get; private set; } = string.Empty;
-        public DateTime CreatedAt { get; private set; }
-        public DateTime? DueDate { get; private set; }
-        public bool IsCompleted { get; private set; }
-        public string Status { get; private set; } = string.Empty;
-        public T? AdditionalData { get; private set; }
+        public int Id { get;  set; }
+        public string Title { get;  set; }
+        public string Description { get;  set; }
+        public DateTime CreatedAt { get;  set; }
+        public DateTime? DueDate { get;  set; }
+        public bool IsCompleted { get;  set; }
+        public Status Status { get;  set; }
+        public Priority? Priority { get;  set; }
+        public string? AdditionalData { get;  set; }
 
 
-
-        private static readonly TodoValidator<Todo<T>> _validate = todo =>
-        !string.IsNullOrWhiteSpace(todo.Title) 
-        && !string.IsNullOrWhiteSpace(todo.Status)
-        && (!todo.DueDate.HasValue || todo.DueDate > DateTime.UtcNow);
-
-        
-
-        public Todo(string title, string description, DateTime? dueDate, T? additionalData, string status)
+        public Todo(string title, string description, DateTime? dueDate, string? additionalData, Status status, Priority? priority)
         {
-            if (!_validate(this))
-                throw new Exceptions.DomainException("Validación fallida: Title, Status o DueDate inválidos.");
-
             Title = title;
             Description = description;
             CreatedAt = DateTime.UtcNow;
@@ -36,13 +26,11 @@ namespace Domain.Entities
             IsCompleted = false;
             Status = status;
             AdditionalData = additionalData;
+            Priority = priority;
         }
 
-        public void Update(string title, string description, DateTime? dueDate, T? additionalData, string status, bool iscompleted )
+        public void Update(string title, string description, DateTime? dueDate, string? additionalData, Status status, bool iscompleted, Priority? priority )
         {
-            if (!_validate(this))
-                throw new Exceptions.DomainException("Validación fallida al actualizar entidad.");
-
 
             Title = title;
             Description = description;
@@ -50,6 +38,7 @@ namespace Domain.Entities
             Status = status;
             AdditionalData = additionalData;
             IsCompleted = iscompleted;
+            Priority = priority;
         }
 
         public void MarkCompleted()

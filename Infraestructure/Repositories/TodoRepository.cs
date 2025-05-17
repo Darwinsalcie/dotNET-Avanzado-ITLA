@@ -3,49 +3,86 @@ using Domain.Interfaces;
 using Infraestructure.Context;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace Infraestructure.Repositories
 {
-    public class TodoRepository<T> : ITodoRepository<T>
+    public class TodoRepository : IGenericRepository<Todo>
     {
-        private readonly AppDbContext _db;
+        // Inyectamos el contexto de la base de datos
+        private readonly AppDbContext _context;
 
-        public TodoRepository(AppDbContext db)
+        public TodoRepository(AppDbContext context)
         {
-            _db = db;
+            _context = context;
         }
 
-        private DbSet<Todo<T>> Set => _db.Set<Todo<T>>();
 
-        public async Task<IEnumerable<Todo<T>>> GetAllAsync()
-        {
-            return await Set.AsNoTracking().ToListAsync();
-        }
+        // Método para obtener todos los elementos de la tabla Todos
+        public async Task<IEnumerable<Todo>> GetAllAsync()
+            => await _context.Todos.ToListAsync();
 
-        public async Task<Todo<T>?> GetByIdAsync(int id)
-        {
-            return await Set.FindAsync(id);
-        }
+        // Método para obtener un elemento por su Id
+        public async Task<Todo> GetByIdAsync(int id)
+            => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id);
 
-        public async Task AddAsync(Todo<T> todo)
-        {
-            await Set.AddAsync(todo);
-            await _db.SaveChangesAsync();
-        }
 
-        public async Task UpdateAsync(Todo<T> todo)
+        public async Task<(bool IsSucces, string Message)> AddAsync(Todo entity)
         {
-            Set.Update(todo);
-            await _db.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            var todo = await Set.FindAsync(id);
-            if (todo != null)
+            try
             {
-                Set.Remove(todo);
-                await _db.SaveChangesAsync();
+                await _context.Todos.AddAsync(entity);
+                await _context.SaveChangesAsync();
+                return (true, "Tarea agregado correctamente.");
+            }
+
+            catch (Exception ex) 
+            {
+                return (false, "Error al agregar el elemento a la base de datos.");
+                throw new Exception(ex + ": Error al agregar el elemento a la base de datos." );
+            }
+            
+        }
+        public async Task<(bool IsSucces, string Message)> UpdateAsync(Todo entity)
+        {
+            try
+            {
+                _context.Todos.Update(entity);
+                await _context.SaveChangesAsync();
+                return (true, "Tarea actualizado correctamente.");
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error al actualizar el elemento en la base de datos.");
+                // Manejo de excepciones
+                throw new Exception(ex + ": Error al actualizar el elemento en la base de datos.");
+            }
+        }
+        public async Task<(bool IsSucces, string Message)> DeleteAsync(int id)
+        {
+            try
+            {
+                // Buscamos el elemento por su Id para ver si existe
+                var todo =  await _context.Todos.FindAsync(id);
+
+                // Si existe, lo eliminamos
+                if (todo != null)
+                {
+                    _context.Todos.Remove(todo);
+                    await _context.SaveChangesAsync();
+                    return (true, "Tarea eliminado correctamente.");
+
+                }
+                else
+                {
+                    return (false, "No se encontró el elemento a eliminar.");
+                    // Si no existe, lanzamos una excepción
+                    throw new Exception("No se encontró el elemento a eliminar.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error al eliminar el elemento de la base de datos.");
+                // Manejo de excepciones
+                throw new Exception(ex + ": Error al eliminar el elemento de la base de datos.");
             }
         }
     }

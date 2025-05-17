@@ -8,4 +8,12 @@ namespace Domain.Enums
         Medium,
         High
     }
+
+    public enum Status
+    {
+        Pendiente,
+        EnProceso,
+        Completado,
+        Cancelado
+    }
 }

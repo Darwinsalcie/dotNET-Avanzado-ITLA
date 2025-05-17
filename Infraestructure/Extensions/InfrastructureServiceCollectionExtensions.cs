@@ -1,4 +1,5 @@
-﻿using Domain.Interfaces;
+﻿using Domain.Entities;
+using Domain.Interfaces;
 using Infraestructure.Context;
 using Infraestructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ namespace Infraestructure.Extensions
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             // Repositories
-            services.AddScoped(typeof(ITodoRepository<>), typeof(TodoRepository<>));
+            services.AddScoped(typeof(IGenericRepository<Todo>), typeof(TodoRepository));
 
             return services;
         }

@@ -1,20 +1,17 @@
-﻿using Application.DTOs;
+﻿using Application.DTOs.RequesDTO;
+using Application.DTOs.Response;
+using Domain.DTOs;
 using Domain.Entities;
 
 
 namespace Application.Interfaces
 {
-    public interface ITodoService<T>
+    public interface ITodoService
     {
-        Task<IEnumerable<TodoDto<T>>> GetAllAsync();
-        Task<TodoDto<T>?> GetByIdAsync(int id);
-
-        Task<IEnumerable<TodoDto<T>>> GetPendingAsync();
-        Task<IEnumerable<TodoDto<T>>> GetOverdueAsync();
-        Task<IEnumerable<TodoDto<T>>> SearchAsync(string keyword);
-
-        Task<TodoDto<T>> CreateAsync(CreateTodoDto<T> dto);
-        Task<TodoDto<T>?> UpdateAsync(int id, UpdateTodoDto<T> dto);
-        Task<bool> DeleteAsync(int id);
+        Task<Response<Todo>> GetTodoAllAsync();
+        Task<Response<Todo>> GetTodoByIdAsync(int id);
+        // … resto de métodos
     }
+
 }
+
