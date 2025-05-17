@@ -8,8 +8,8 @@ namespace Application.Interfaces
 {
     public interface ITodoService
     {
-        Task<Response<Todo>> GetTodoAllAsync();
-        Task<Response<Todo>> GetTodoByIdAsync(int id);
+        Task<Response<TodoResponseDTO>> GetTodoAllAsync();
+        Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id);
 
         Task<Response<string>> AddTodoAsync(Todo request);
         Task<Response<string>> UpdateTodoAsync(Todo request);

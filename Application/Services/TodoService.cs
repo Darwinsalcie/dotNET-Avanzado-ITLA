@@ -4,6 +4,7 @@ using Domain.DTOs;
 using Domain.Entities;
 using Domain.Interfaces;
 using Application.Interfaces;
+using Application.DTOs.Response;
 namespace Application.Services
 {
     public class TodoService : ITodoService
@@ -15,15 +16,32 @@ namespace Application.Services
             _repository = repository;
         }
 
-        public async Task<Response<Todo>> GetTodoAllAsync()
+
+        // Func que calcula días restantes de manera reutilizable
+        private static readonly Func<Todo, int> CalcDaysRemaining = todo =>
+            todo.DueDate.HasValue
+                ? (int)Math.Max(0, (todo.DueDate.Value.Date - DateTime.UtcNow.Date).TotalDays)
+                : 0;
+
+
+        public async Task<Response<TodoResponseDTO>> GetTodoAllAsync()
         {
-            var response = new Response<Todo>();
+            var response = new Response<TodoResponseDTO>();
             try
             {
-                // Usamos el GetAllAsyn del Repositorio
-                // y lo asignamos a la propiedad DataList de la respuesta
-                // para así poder usarlo o enviarlo en el servicio
-                response.DataList = await _repository.GetAllAsync();
+
+                var todos = await _repository.GetAllAsync();
+
+                response.DataList = todos.Select(t => new TodoResponseDTO
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    IsCompleted = t.IsCompleted,
+                    DueDate = t.DueDate,
+                    DaysRemaining = CalcDaysRemaining(t)
+                }).ToList();
+
                 response.Successful = true;
             }
             catch (Exception ex)
@@ -35,26 +53,38 @@ namespace Application.Services
             return response;
         }
 
-        public async Task<Response<Todo>> GetTodoByIdAsync(int id)
+        public async Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id)
         {
-            var response = new Response<Todo>();
+            var response = new Response<TodoResponseDTO>();
             try
             {
                 // Usamos el GetbyIdAsync del Repositorio
                 // y lo asignamos a la propiedad DataList de la respuesta
                 // para así poder usarlo o enviarlo en el servicio
-                var result = await _repository.GetByIdAsync(id);
+                var t = await _repository.GetByIdAsync(id);
 
-                if (result != null)
+                if (t is null)
                 {
-                    response.SingleData = result;
-                    response.Successful = true;
+                    response.Successful = false;
+                    response.Message = "El elemento no existe en la base de datos.";
+
 
                 }
                 else
                 {
-                    response.Successful = false;
-                    response.Message = "No se encontró el elemento con el Id proporcionado.";
+
+                    //**OJO** Usar Mapping para mapear el objeto y Calcular los días restantes
+                    // dentro del objeto de respuesta
+                    response.SingleData = new TodoResponseDTO
+                    {
+                        Id = t.Id,
+                        Title = t.Title,
+                        Description = t.Description,
+                        IsCompleted = t.IsCompleted,
+                        DueDate = t.DueDate,
+                        DaysRemaining = CalcDaysRemaining(t)
+                    };
+                    response.Successful = true;
                 }
             }
             catch (Exception ex)
@@ -129,6 +159,9 @@ namespace Application.Services
             //Devolvemos la respuesta
             return response;
         }
+
+
+
     }
 
 }

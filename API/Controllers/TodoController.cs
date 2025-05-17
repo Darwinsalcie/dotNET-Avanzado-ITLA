@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using Application.DTOs.Response;
+using Application.Interfaces;
 using Application.Services;
 using Domain.DTOs;
 using Domain.Entities;
@@ -19,12 +20,12 @@ namespace API.Controllers
 
         // GET: api/Todo
         [HttpGet]
-        public async Task<ActionResult<Response<Todo>>> GetTodoAllAsync()
+        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoAllAsync()
             => await _todoService.GetTodoAllAsync();
 
         // GET: api/Todo/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Response<Todo>>> GetTodoByIdAsync(int id)
+        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoByIdAsync(int id)
             => await _todoService.GetTodoByIdAsync(id);
 
 
