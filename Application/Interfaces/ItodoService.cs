@@ -10,7 +10,10 @@ namespace Application.Interfaces
     {
         Task<Response<Todo>> GetTodoAllAsync();
         Task<Response<Todo>> GetTodoByIdAsync(int id);
-        // … resto de métodos
+
+        Task<Response<string>> AddTodoAsync(Todo request);
+        Task<Response<string>> UpdateTodoAsync(Todo request);
+        Task<Response<string>> DeleteTodoAsync(int id);
     }
 
 }

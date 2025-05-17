@@ -28,6 +28,22 @@ namespace API.Controllers
             => await _todoService.GetTodoByIdAsync(id);
 
 
+        // POST: api/Todo
+        [HttpPost]
+        public async Task<ActionResult<Response<string>>> AddTodoAsync(Todo todo)
+            => await _todoService.AddTodoAsync(todo);
+
+
+        // PUT: api/Todo/5
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Response<string>>> UpdateTodoAsync(Todo todo)
+            => await _todoService.UpdateTodoAsync(todo);
+
+        // DELETE: api/Todo/5
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
+            => await _todoService.DeleteTodoAsync(id);
+
 
     }
 }
