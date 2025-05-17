@@ -26,15 +26,6 @@ namespace API.Extensions
                 todo => Console.WriteLine($"[Notification] Todo #{todo.Id} – {todo.Title}")
             );
 
-            // Cálculo de días restantes (Scoped)
-            services.AddScoped<Func<Todo, int>>(_ =>
-                todo =>
-                {
-                    if (!todo.DueDate.HasValue) return -1;
-                    var remaining = todo.DueDate.Value - DateTime.UtcNow;
-                    return (int)Math.Ceiling(remaining.TotalDays);
-                }
-            );
 
 
 
