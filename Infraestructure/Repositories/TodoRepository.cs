@@ -29,6 +29,18 @@ namespace Infraestructure.Repositories
         {
             try
             {
+                // Verificamos si el elemento ya existe en la base de datos
+                var exists =  _context.Todos.Any(x => 
+                
+                x.Title == entity.Title
+
+                );
+
+                if (exists) 
+                {
+                    return (false, "Ya existe una tarea con ese titulo");
+                }
+
                 await _context.Todos.AddAsync(entity);
                 await _context.SaveChangesAsync();
                 return (true, "Tarea agregado correctamente.");

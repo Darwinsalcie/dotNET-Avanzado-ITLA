@@ -35,7 +35,7 @@ namespace API.Controllers
 
 
         // PUT: api/Todo/5
-        [HttpPut("{id}")]
+        [HttpPut]
         public async Task<ActionResult<Response<string>>> UpdateTodoAsync(Todo todo)
             => await _todoService.UpdateTodoAsync(todo);
 
