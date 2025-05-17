@@ -1,6 +1,5 @@
 ﻿
 using Domain.Enums;
-using Domain.Delegates;
 
 namespace Domain.Entities
 {
@@ -17,10 +16,10 @@ namespace Domain.Entities
         public string? AdditionalData { get;  private set; }
 
 
-        // Resolver (Bloquea get tareas pasadas)
-        EntityValidator<Todo> validate = todo =>
-            !string.IsNullOrWhiteSpace(todo.Title)
-            && (!todo.DueDate.HasValue || todo.DueDate > DateTime.UtcNow);
+        //// Resolver (Bloquea get tareas pasadas)
+        //EntityValidator<Todo> validate = todo =>
+        //    !string.IsNullOrWhiteSpace(todo.Title)
+        //    && (!todo.DueDate.HasValue || todo.DueDate > DateTime.UtcNow);
 
         public Todo(string title, string? description, DateTime? dueDate, string? additionalData, Status status, Priority? priority)
         {
@@ -35,8 +34,8 @@ namespace Domain.Entities
             AdditionalData = additionalData;
             Priority = priority;
 
-            if (!validate(this))
-                throw new ArgumentException("Invalid Todo entity");
+            //if (!validate(this))
+            //    throw new ArgumentException("Invalid Todo entity");
         }
 
         public void Update(string title, string? description, DateTime? dueDate, string? additionalData, Status status, bool iscompleted, Priority? priority )
@@ -52,8 +51,8 @@ namespace Domain.Entities
             Priority = priority;
 
 
-            if (!validate(this))
-                throw new ArgumentException("Invalid Todo entity");
+            //if (!validate(this))
+            //    throw new ArgumentException("Invalid Todo entity");
         }
 
         public void MarkCompleted()

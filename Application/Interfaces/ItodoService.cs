@@ -12,7 +12,7 @@ namespace Application.Interfaces
         Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id);
 
         Task<Response<string>> AddTodoAsync(Todo request);
-        Task<Response<string>> UpdateTodoAsync(Todo request);
+        Task<Response<string>> UpdateTodoAsync(Todo request, int Id);
         Task<Response<string>> DeleteTodoAsync(int id);
     }
 

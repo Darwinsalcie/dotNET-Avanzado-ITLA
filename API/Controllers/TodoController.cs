@@ -36,9 +36,9 @@ namespace API.Controllers
 
 
         // PUT: api/Todo/5
-        [HttpPut]
-        public async Task<ActionResult<Response<string>>> UpdateTodoAsync(Todo todo)
-            => await _todoService.UpdateTodoAsync(todo);
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Response<string>>> UpdateTodoAsync(Todo todo, int id)
+            => await _todoService.UpdateTodoAsync(todo, id);
 
         // DELETE: api/Todo/5
         [HttpDelete("{id}")]

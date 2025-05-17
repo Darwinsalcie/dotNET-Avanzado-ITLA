@@ -99,8 +99,21 @@ namespace Application.Services
         public async Task<Response<string>> AddTodoAsync(Todo todo)
         {
             var response = new Response<string>();
+
+            Func<Todo, bool> validate = todo => 
+            !string.IsNullOrEmpty(todo.Title)
+            && todo.DueDate.HasValue && todo.DueDate > DateTime.UtcNow;
+
+            if (!validate(todo))
+            {
+                response.Successful = false;
+                response.Message = "La fecha de vencimiento no puede ser anterior a la fecha actual.";
+                return response;
+            }
+
             try
             {
+
                 // Usamos el AddAsync del Repositorio
                 // y lo asignamos a la propiedad DataList de la respuesta
                 // para así poder usarlo o enviarlo en el servicio
@@ -115,27 +128,57 @@ namespace Application.Services
             }
             //Devolvemos la respuesta
             return response;
+
+
         }
 
-        public async Task<Response<string>> UpdateTodoAsync(Todo todo)
+        public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
         {
             var response = new Response<string>();
-            try
-            {
-                // Usamos el UpdateAsync del Repositorio
-                // y lo asignamos a la propiedad DataList de la respuesta
-                // para así poder usarlo o enviarlo en el servicio
-                var result = await _repository.UpdateAsync(todo);
-                response.Message = result.Message;
 
-                response.Successful = result.IsSucces;
-            }
-            catch (Exception ex)
+            var t = await _repository.GetByIdAsync(id);
+            if (t is null)
             {
-                response.Errors.Add(ex.Message);
+                response.Successful = false;
+                response.Message = "El elemento no existe en la base de datos.";
+
+                //Al usar return el resto del codigo solo se ejecuta si no se entra en el if
+                return response;
             }
-            //Devolvemos la respuesta
-            return response;
+
+
+            Func<Todo, bool> validate = todo =>
+            !string.IsNullOrEmpty(todo.Title)
+            && todo.DueDate.HasValue && todo.DueDate > DateTime.UtcNow;
+
+            if (!validate(todo))
+            {
+                response.Successful = false;
+                response.Message = "La fecha de vencimiento no puede ser anterior a la fecha actual.";
+                return response;
+            }
+
+            else 
+            {
+
+                try
+                {
+                    // Usamos el UpdateAsync del Repositorio
+                    // y lo asignamos a la propiedad DataList de la respuesta
+                    // para así poder usarlo o enviarlo en el servicio
+                    var result = await _repository.UpdateAsync(todo);
+                    response.Message = result.Message;
+
+                    response.Successful = result.IsSucces;
+                }
+                catch (Exception ex)
+                {
+                    response.Errors.Add(ex.Message);
+                }
+                //Devolvemos la respuesta
+                return response;
+            }
+
         }
 
         public async Task<Response<string>> DeleteTodoAsync(int id)
