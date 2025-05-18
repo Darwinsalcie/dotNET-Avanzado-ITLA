@@ -1,5 +1,6 @@
-﻿using Application.Interfaces;
+﻿using Application.Factory;
 using Application.Services;
+using Application.ValidateDTO.ValidateTodo;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infraestructure.Repositories;
@@ -10,6 +11,18 @@ namespace API.Extensions
     {
         public static IServiceCollection AddApiServices(this IServiceCollection services)
         {
+
+            // Repositorio genérico (Scoped)
+            services.AddScoped(typeof(IGenericRepository<Todo>), typeof(TodoRepository));
+
+            // Validación de DTOs
+            services.AddScoped<CreateTodoDtoValidator>();
+
+            //Fabrica de entidades
+            services.AddScoped<ITodoFactory, TodoFactory>();
+
+            // Servicios de aplicación 
+            services.AddScoped<ITodoService, TodoService>();
 
             //// Registrar repositorio (ajusta según tu implementación)
             //services.AddScoped<ITodoRepository<string>, TodoRepository<string>>();
@@ -28,7 +41,6 @@ namespace API.Extensions
 
 
 
-            services.AddScoped<ITodoService, TodoService>();
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();

@@ -9,7 +9,7 @@ namespace Infraestructure.Repositories
     {
         // Inyectamos el contexto de la base de datos
         private readonly AppDbContext _context;
-
+        
         public TodoRepository(AppDbContext context)
         {
             _context = context;

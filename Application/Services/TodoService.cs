@@ -1,47 +1,37 @@
 ﻿
 
+using Application.DTOs.RequesDTO;
+using Application.DTOs.Response;
+using Application.Factory;
+using Application.ValidateDTO.ValidateTodo;
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.Interfaces;
-using Application.Interfaces;
-using Application.DTOs.Response;
+
 namespace Application.Services
 {
     public class TodoService : ITodoService
     {
         private readonly IGenericRepository<Todo> _repository;
+        private readonly ITodoFactory _factory;
 
-        public TodoService(IGenericRepository<Todo> repository)
+        public TodoService(IGenericRepository<Todo> repository, ITodoFactory factory)
         {
             _repository = repository;
+            _factory = factory;
         }
 
-
-        // Func que calcula días restantes de manera reutilizable
-        private static readonly Func<Todo, int> CalcDaysRemaining = todo =>
-            todo.DueDate.HasValue
-                ? (int)Math.Max(0, (todo.DueDate.Value.Date - DateTime.UtcNow.Date).TotalDays)
-                : 0;
-
+        ValidateTodoDto ValidateTodoDto = new ValidateTodoDto();
 
         public async Task<Response<TodoResponseDTO>> GetTodoAllAsync()
         {
             var response = new Response<TodoResponseDTO>();
+
             try
             {
 
                 var todos = await _repository.GetAllAsync();
-
-                response.DataList = todos.Select(t => new TodoResponseDTO
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    IsCompleted = t.IsCompleted,
-                    DueDate = t.DueDate,
-                    DaysRemaining = CalcDaysRemaining(t)
-                }).ToList();
-
+                response.DataList = todos.Select(MapToResponseDto).ToList();
                 response.Successful = true;
             }
             catch (Exception ex)
@@ -73,17 +63,9 @@ namespace Application.Services
                 else
                 {
 
-                    //**OJO** Usar Mapping para mapear el objeto y Calcular los días restantes
-                    // dentro del objeto de respuesta
-                    response.SingleData = new TodoResponseDTO
-                    {
-                        Id = t.Id,
-                        Title = t.Title,
-                        Description = t.Description,
-                        IsCompleted = t.IsCompleted,
-                        DueDate = t.DueDate,
-                        DaysRemaining = CalcDaysRemaining(t)
-                    };
+                    //**OJO** Usar un mejor Mapping mas centralizado o Automapper
+
+                    response.SingleData = MapToResponseDto(t);
                     response.Successful = true;
                 }
             }
@@ -95,16 +77,13 @@ namespace Application.Services
             return response;
         }
 
-
         public async Task<Response<string>> AddTodoAsync(Todo todo)
         {
             var response = new Response<string>();
 
-            Func<Todo, bool> validate = todo => 
-            !string.IsNullOrEmpty(todo.Title)
-            && todo.DueDate.HasValue && todo.DueDate > DateTime.UtcNow;
+            var errors = ValidateTodoDto.Validate(todo);
 
-            if (!validate(todo))
+            if (errors.Any())
             {
                 response.Successful = false;
                 response.Message = "La fecha de vencimiento no puede ser anterior a la fecha actual.";
@@ -132,6 +111,7 @@ namespace Application.Services
 
         }
 
+   
         public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
         {
             var response = new Response<string>();
@@ -203,6 +183,94 @@ namespace Application.Services
             return response;
         }
 
+        public async Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto)
+        {
+            var response = new Response<string>();
+            try
+            {
+                var todo = _factory.CreateHighPriority(dto);
+                var result = await _repository.AddAsync(todo);
+                response.Message = result.Message;
+                response.Successful = result.IsSucces;
+            }
+            catch (ArgumentException ex)
+            {
+                response.Successful = false;
+                response.Message = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                response.Errors.Add(ex.Message);
+            }
+            return response;
+        }
+
+        public async Task<Response<string>> AddMediumPriorityTodoAsync(CreateTodoRequestDto dto)
+        {
+            var response = new Response<string>();
+            try
+            {
+                var todo = _factory.CreateMediumPriority(dto);
+                var result = await _repository.AddAsync(todo);
+                response.Message = result.Message;
+                response.Successful = result.IsSucces;
+            }
+            catch (ArgumentException ex)
+            {
+                response.Successful = false;
+                response.Message = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                response.Errors.Add(ex.Message);
+            }
+            return response;
+        }
+
+        public async Task<Response<string>> AddLowPriorityTodoAsync(CreateTodoRequestDto dto)
+        {
+            var response = new Response<string>();
+            try
+            {
+                var todo = _factory.CreateLowPriority(dto);
+                var result = await _repository.AddAsync(todo);
+                response.Message = result.Message;
+                response.Successful = result.IsSucces;
+            }
+            catch (ArgumentException ex)
+            {
+                response.Successful = false;
+                response.Message = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                response.Errors.Add(ex.Message);
+            }
+            return response;
+        }
+
+        //----------------------------------------------------------------------------------------------
+        //Metod privados para mapear los objetos de respuesta
+        //----------------------------------------------------------------------------------------------
+        private TodoResponseDTO MapToResponseDto(Todo t) => new TodoResponseDTO
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Description = t.Description,
+            IsCompleted = t.IsCompleted,
+            CreatedAt = t.CreatedAt,
+            DueDate = t.DueDate,
+            Status = t.Status,
+            Priority = t.Priority,
+            AdditionalData = t.AdditionalData,
+            DaysRemaining = CalcDaysRemaining(t)
+        };
+
+        // Func que calcula días restantes de manera reutilizable
+        private static readonly Func<Todo, int> CalcDaysRemaining = todo =>
+            todo.DueDate.HasValue
+                ? (int)Math.Max(0, (todo.DueDate.Value.Date - DateTime.UtcNow.Date).TotalDays)
+                : 0;
 
 
     }

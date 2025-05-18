@@ -1,10 +1,11 @@
 ﻿using Application.DTOs.Response;
-using Application.Interfaces;
-using Application.Services;
 using Domain.DTOs;
 using Domain.Entities;
-using Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Application.DTOs.RequesDTO;
+using Application.Factory;
+using Application.Services;
+using API.Extensions;
 
 namespace API.Controllers
 {
@@ -15,8 +16,10 @@ namespace API.Controllers
         //Acá supongo que debería inyectase una interfaz para desacoplar el controlador de la implementación concreta
         //Pero mientras tanto, lo dejo así para que funcione
         private readonly ITodoService _todoService;
-        public TodoController(ITodoService todoService)
-            => _todoService = todoService;
+        public TodoController(ITodoService todoService)  =>
+        
+            _todoService = todoService;
+        
 
         // GET: api/Todo
         [HttpGet]
@@ -45,6 +48,26 @@ namespace API.Controllers
         public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
             => await _todoService.DeleteTodoAsync(id);
 
+
+        //POST: api/Todo/high(prioridad alta)
+
+
+        [HttpPost("high")]
+
+        public async Task<IActionResult> CreateHigh([FromBody] CreateTodoRequestDto dto)
+            => await this.ToActionResultAsync(_todoService.AddHighPriorityTodoAsync(dto));
+
+
+        // prioridad media
+        [HttpPost("medium")]
+        public async Task<IActionResult> CreateMedium([FromBody] CreateTodoRequestDto dto)
+            => await this.ToActionResultAsync(_todoService.AddMediumPriorityTodoAsync(dto));
+
+
+        // prioridad baja
+        [HttpPost("low")]
+        public async Task<IActionResult> CreateLow([FromBody] CreateTodoRequestDto dto)
+            => await this.ToActionResultAsync(_todoService.AddLowPriorityTodoAsync(dto));
 
     }
 }
