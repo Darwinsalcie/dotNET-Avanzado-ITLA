@@ -3,9 +3,9 @@ using Domain.DTOs;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.RequesDTO;
-using Application.Factory;
 using Application.Services;
 using API.Extensions;
+using Application.Events.Interfaces;
 
 namespace API.Controllers
 {
@@ -16,10 +16,12 @@ namespace API.Controllers
         //Acá supongo que debería inyectase una interfaz para desacoplar el controlador de la implementación concreta
         //Pero mientras tanto, lo dejo así para que funcione
         private readonly ITodoService _todoService;
-        public TodoController(ITodoService todoService)  =>
-        
+        private readonly ITodoProcessingQueue _todoQueue;
+        public TodoController(ITodoService todoService, ITodoProcessingQueue todoQueue)
+        {
             _todoService = todoService;
-        
+            _todoQueue = todoQueue;
+        }
 
         // GET: api/Todo
         [HttpGet]

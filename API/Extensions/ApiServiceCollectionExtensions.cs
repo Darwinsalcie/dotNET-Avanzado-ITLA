@@ -1,9 +1,12 @@
-﻿using Application.Factory;
+﻿using Application.Events.Interfaces;
+using Application.Factory;
 using Application.Services;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infraestructure.Repositories;
+using Infrastructure.Events;
+using System.Reactive.Concurrency;
 
 namespace API.Extensions
 {
@@ -20,6 +23,14 @@ namespace API.Extensions
 
             //Fabrica de entidades
             services.AddScoped<ITodoFactory, TodoFactory>();
+
+
+
+            // Registrar cola de procesamiento Rx como Singleton
+            services.AddSingleton<ITodoProcessingQueue>(provider =>
+                new TodoProcessingQueue(
+                    subscribeOnScheduler: TaskPoolScheduler.Default,
+                    observeOnScheduler: TaskPoolScheduler.Default));
 
             // Servicios de aplicación 
             services.AddScoped<ITodoService, TodoService>();

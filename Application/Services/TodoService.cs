@@ -2,6 +2,7 @@
 
 using Application.DTOs.RequesDTO;
 using Application.DTOs.Response;
+using Application.Events.Interfaces;
 using Application.Factory;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.DTOs;
@@ -14,11 +15,12 @@ namespace Application.Services
     {
         private readonly IGenericRepository<Todo> _repository;
         private readonly ITodoFactory _factory;
-
-        public TodoService(IGenericRepository<Todo> repository, ITodoFactory factory)
+        private readonly ITodoProcessingQueue _queue;
+        public TodoService(IGenericRepository<Todo> repository, ITodoFactory factory, ITodoProcessingQueue queue)
         {
             _repository = repository;
             _factory = factory;
+            _queue = queue;
         }
 
         ValidateTodoDto ValidateTodoDto = new ValidateTodoDto();
@@ -100,11 +102,20 @@ namespace Application.Services
                 response.Message = result.Message;
 
                 response.Successful = result.IsSucces;
+
+                // **Encolamos** el trabajo de procesar este Todo
+                if (response.Successful)
+                    _queue.Enqueue(todo);
+
             }
             catch (Exception ex)
             {
                 response.Errors.Add(ex.Message);
             }
+
+            //Enviamos la tarea a la cola de tareas
+
+
             //Devolvemos la respuesta
             return response;
 
@@ -150,6 +161,10 @@ namespace Application.Services
                     response.Message = result.Message;
 
                     response.Successful = result.IsSucces;
+
+                    // **Encolamos** el trabajo de procesar este Todo
+                    if (response.Successful)
+                        _queue.Enqueue(todo);
                 }
                 catch (Exception ex)
                 {
@@ -164,24 +179,37 @@ namespace Application.Services
         public async Task<Response<string>> DeleteTodoAsync(int id)
         {
             var response = new Response<string>();
+
+            // 1. Recupera la entidad para poder encolarla luego
+            var todo = await _repository.GetByIdAsync(id);
+            if (todo is null)
+            {
+                response.Successful = false;
+                response.Message = "El elemento no existe.";
+                return response;
+            }
+
             try
             {
-                // Usamos el DeleteAsync del Repositorio
-                // y lo asignamos a la propiedad DataList de la respuesta
-                // para así poder usarlo o enviarlo en el servicio
+                // 2. Elimina en el repositorio
                 var result = await _repository.DeleteAsync(id);
                 response.Message = result.Message;
-
-
                 response.Successful = result.IsSucces;
+
+                // 3. Encola solo si la eliminación fue exitosa
+                if (response.Successful)
+                {
+                    _queue.Enqueue(todo);
+                }
             }
             catch (Exception ex)
             {
                 response.Errors.Add(ex.Message);
             }
-            //Devolvemos la respuesta
+
             return response;
         }
+
 
         public async Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto)
         {
@@ -192,6 +220,10 @@ namespace Application.Services
                 var result = await _repository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
+
+                // **Encolamos** el trabajo de procesar este Todo
+                if (response.Successful)
+                    _queue.Enqueue(todo);
             }
             catch (ArgumentException ex)
             {
@@ -214,6 +246,10 @@ namespace Application.Services
                 var result = await _repository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
+
+                // **Encolamos** el trabajo de procesar este Todo
+                if (response.Successful)
+                    _queue.Enqueue(todo);
             }
             catch (ArgumentException ex)
             {
@@ -236,6 +272,10 @@ namespace Application.Services
                 var result = await _repository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
+
+                // **Encolamos** el trabajo de procesar este Todo
+                if (response.Successful)
+                    _queue.Enqueue(todo);
             }
             catch (ArgumentException ex)
             {

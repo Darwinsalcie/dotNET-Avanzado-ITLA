@@ -1,5 +1,4 @@
-﻿using Domain.Exceptions;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 
 namespace API.Middlewares
@@ -27,7 +26,7 @@ namespace API.Middlewares
                 var response = new { error = appEx.Message };
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
