@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.RequesDTO;
 using Application.Services;
 using API.Extensions;
-using Application.Events.Interfaces;
 
 namespace API.Controllers
 {
@@ -13,18 +12,27 @@ namespace API.Controllers
     [ApiController]
     public class TodoController : ControllerBase
     {
-        //Acá supongo que debería inyectase una interfaz para desacoplar el controlador de la implementación concreta
-        //Pero mientras tanto, lo dejo así para que funcione
+
         private readonly ITodoService _todoService;
-        private readonly ITodoProcessingQueue _todoQueue;
-        public TodoController(ITodoService todoService, ITodoProcessingQueue todoQueue)
+        //private readonly ITodoProcessingQueue _todoQueue;
+        public TodoController(ITodoService todoService/*, ITodoProcessingQueue todoQueue*/)
         {
             _todoService = todoService;
-            _todoQueue = todoQueue;
+            //_todoQueue = todoQueue;
         }
 
         // GET: api/Todo
         [HttpGet]
+
+        /*Lo que sería <Response<TodoResponseDTO>> tenemo Response<T>, donde T es reemplazado por TodoResponseDTO
+         * Envolver el dto en Response permite agregar como si fueran campos al objeto que se devuelve con informacion
+         * sobre el resultado de la operación, como si hubo errores, si fue exitoso, etc.
+         */
+
+        /*Ese Response<dto> lo envolvemos en ActionResult que es una clase de ASP.NET que nos permite manejar respuestas http
+         como 200, 400, 500, etc.
+         */
+
         public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoAllAsync()
             => await _todoService.GetTodoAllAsync();
 

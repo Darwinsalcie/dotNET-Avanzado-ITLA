@@ -11,11 +11,10 @@ namespace Infraestructure.Context
         {
         }
 
-
         // Si no se quiere hacer override la forma sencilla de hacerlo es:
         public DbSet<Todo> Todos { get; set; }
 
-        // Para cambiar el nombre de la tabla se haría un ovveride de OnModelCreating
+        // Para cambiar el nombre de la tabla se haría un override de OnModelCreating
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Cambiamos el nombre de la tabla a "TodoList"

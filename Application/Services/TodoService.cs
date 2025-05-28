@@ -81,10 +81,12 @@ namespace Application.Services
 
         public async Task<Response<string>> AddTodoAsync(Todo todo)
         {
-            var response = new Response<string>();
 
             var errors = ValidateTodoDto.Validate(todo);
 
+            var response = new Response<string>();
+
+            // Si hay alugn error, se devuelve la respuesta con el error.
             if (errors.Any())
             {
                 response.Successful = false;
@@ -94,16 +96,38 @@ namespace Application.Services
 
             try
             {
+                //-----------------------------------------------------------------------------------------
+                // Funcionamiento de async/await
+                //-----------------------------------------------------------------------------------------
 
-                // Usamos el AddAsync del Repositorio
-                // y lo asignamos a la propiedad DataList de la respuesta
-                // para así poder usarlo o enviarlo en el servicio
+                // Usamos el AddAsync del Repositorio y almacenamos lo que retorna en result
+                // Esperamos a que se complete la tarea asincrónica para seguir con lo demás que hay
+                // en el metodo.
+                // Sin el await, el código de AddTodoAsync continuaría ejecutándose sin esperar a que se complete la tarea.
+
+                //Se libera el hilo por si se hacer otra operacion de Create tambien se pueda ejecutar
+                // de manera simultánea, el await no bloquea otras peticiones.
+
+                //Await las async/await tasks hacen que el programa espere hasta que las tareas se completen
                 var result = await _repository.AddAsync(todo);
                 response.Message = result.Message;
 
                 response.Successful = result.IsSucces;
 
+
+                //-----------------------------------------------------------------------------------------
+                // Funcionamiento de la cola de procesamiento "(RX.NET)"
+                //-----------------------------------------------------------------------------------------
+
+
                 // **Encolamos** el trabajo de procesar este Todo
+
+                /*Tenemos un procesamiento asincrono de las tareas en el que no tenemos garantizado que todas
+                 las peticiones de AddTodoAsync que se hagan se guarden al mismo tiempo, es posible que la segunda 
+                petición se guarde antes que la primera*/
+
+                //Si la tarea fue exitosa , la encolamos para luego hacer algo con el resultado como enviar un correo, notificar, etc.
+
                 if (response.Successful)
                     _queue.Enqueue(todo);
 
@@ -122,7 +146,6 @@ namespace Application.Services
 
         }
 
-   
         public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
         {
             var response = new Response<string>();
@@ -209,7 +232,6 @@ namespace Application.Services
 
             return response;
         }
-
 
         public async Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto)
         {
