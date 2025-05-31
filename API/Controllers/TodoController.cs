@@ -81,6 +81,14 @@ namespace API.Controllers
         }
 
 
+        [HttpGet("porcentaje-pendientes")]
+        public async Task<IActionResult> GetPorcentajePendientes()
+        {
+            double porcentaje = await _todoService.ContarTareasPendientesAsync();
+            return Ok(new { PorcentajePendientes = porcentaje });
+        }
+
+
 
         //POST: api/Todo/high(prioridad alta)
 
