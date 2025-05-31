@@ -7,7 +7,9 @@ using Application.Factory;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.DTOs;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.Interfaces;
+using System.Collections.Concurrent;
 
 namespace Application.Services
 {
@@ -16,6 +18,16 @@ namespace Application.Services
         private readonly ITodoRepository _todoRepository;
         private readonly ITodoFactory _factory;
         private readonly ITodoProcessingQueue _queue;
+
+        // ------- MEMOIZATION CACHES -------
+        // Para el filtro, guardaremos listas de DTO ya mapeadas:
+        private static readonly ConcurrentDictionary<string, List<TodoResponseDTO>> _cacheFiltro
+            = new ConcurrentDictionary<string, List<TodoResponseDTO>>();
+
+        // Para el porcentaje de tareas completadas, clave fija "PorcentajeTareasCompletadas":
+        private static readonly ConcurrentDictionary<string, double> _cachePorcentaje
+            = new ConcurrentDictionary<string, double>();
+        // ----------------------------------
         public TodoService(ITodoRepository todoRepository, ITodoFactory factory, ITodoProcessingQueue queue)
         {
             _todoRepository = todoRepository;
@@ -45,14 +57,47 @@ namespace Application.Services
             return response;
         }
 
-        public async Task<Response<TodoResponseDTO>> GetTodoByStatusAsync(int status ) 
-        {
-            var response = new Response<TodoResponseDTO>();
-            var todos = await _todoRepository.GetByStatusAsync(status);
-            response.DataList = todos.Select(MapToResponseDto).ToList();
 
-            return response;
+        //public async Task<Response<TodoResponseDTO>> FilterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate)
+        //{
+
+
+        //    var response = new Response<TodoResponseDTO>();
+        //    var todos = await _todoRepository.filterTodoAsync(status, priority, title, dueDate);
+        //    response.DataList = todos.Select(MapToResponseDto).ToList();
+
+        //    return response;
+        //}
+
+
+        // ------ MÉTODO FILTER con MEMOIZATION ------
+        public Task<Response<TodoResponseDTO>> FilterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate)
+        {
+            // 1. Construir clave única a partir de todos los parámetros
+            string cacheKey = $"Filtro:{status}|{priority}|{title}|{dueDate:yyyy-MM-dd}";
+
+            // 2. Obtener (o calcular+almacenar) la lista de DTO en _cacheFiltro
+            var listaDto = _cacheFiltro.GetOrAdd(cacheKey, key =>
+            {
+                // Si no existe aún en el diccionario, esto se ejecuta:
+                // - Llamamos al repositorio para obtener dominio Todo
+                // - Mapeamos a DTO
+                // NOTA: Esto es síncrono dentro de GetOrAdd; el repositorio es async,
+                //       así que bloqueamos con .Result (solo en este contexto de ejemplo).
+                var todosDominio = _todoRepository.filterTodoAsync(status, priority, title, dueDate).Result;
+                return todosDominio.Select(MapToResponseDto).ToList();
+            });
+
+            // 3. Construir la Response a partir de la lista ya memorizada
+            var response = new Response<TodoResponseDTO>
+            {
+                DataList = listaDto,
+                Successful = true
+            };
+            return Task.FromResult(response);
         }
+        // -------------------------------------------
+
         public async Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id)
         {
             var response = new Response<TodoResponseDTO>();
@@ -86,7 +131,6 @@ namespace Application.Services
             //Devolvemos la respuesta
             return response;
         }
-
         public async Task<Response<string>> AddTodoAsync(Todo todo)
         {
 
@@ -138,6 +182,8 @@ namespace Application.Services
 
                 if (response.Successful)
                     _queue.Enqueue(todo);
+                _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
 
             }
             catch (Exception ex)
@@ -153,7 +199,6 @@ namespace Application.Services
 
 
         }
-
         public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
         {
             var response = new Response<string>();
@@ -196,6 +241,8 @@ namespace Application.Services
                     // **Encolamos** el trabajo de procesar este Todo
                     if (response.Successful)
                         _queue.Enqueue(todo);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
                 }
                 catch (Exception ex)
                 {
@@ -206,6 +253,44 @@ namespace Application.Services
             }
 
         }
+
+        //public async Task<double> ContarTareasCompletadasAsync()
+        //{
+        //    return await _todoRepository.ContarTareasCompletadasAsync();
+        //}
+        public async Task<double> ContarTareasCompletadasAsync()
+        {
+            const string cacheKey = "PorcentajeTareasCompletadas";
+
+            // 1. Si existe en caché, devuélvelo de inmediato
+            if (_cachePorcentaje.TryGetValue(cacheKey, out double cachedValue))
+                return cachedValue;
+
+            // 2. Si no hay valor en caché, llama al repositorio de forma asíncrona
+            double porcentaje = await _todoRepository.ContarTareasCompletadasAsync();
+
+            // 3. Guarda en caché y retorna
+            _cachePorcentaje[cacheKey] = porcentaje;
+            return porcentaje;
+        }
+
+
+        public async Task<double> ContarTareasPendientesAsync() 
+        {
+            const string cacheKey = "PorcentajeTareasPendientes";
+
+            // 1. Si existe en caché, devuélvelo de inmediato
+            if (_cachePorcentaje.TryGetValue(cacheKey, out double cachedValue))
+                return cachedValue;
+
+            // 2. Si no hay valor en caché, llama al repositorio de forma asíncrona
+            double porcentaje = await _todoRepository.ContarTareasPendientesAsync();
+
+            // 3. Guarda en caché y retorna
+            _cachePorcentaje[cacheKey] = porcentaje;
+            return porcentaje;
+        }
+
 
         public async Task<Response<string>> DeleteTodoAsync(int id)
         {
@@ -231,6 +316,8 @@ namespace Application.Services
                 if (response.Successful)
                 {
                     _queue.Enqueue(todo);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
                 }
             }
             catch (Exception ex)
@@ -254,6 +341,8 @@ namespace Application.Services
                 // **Encolamos** el trabajo de procesar este Todo
                 if (response.Successful)
                     _queue.Enqueue(todo);
+                _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
             }
             catch (ArgumentException ex)
             {
@@ -280,6 +369,8 @@ namespace Application.Services
                 // **Encolamos** el trabajo de procesar este Todo
                 if (response.Successful)
                     _queue.Enqueue(todo);
+                _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
             }
             catch (ArgumentException ex)
             {
@@ -306,6 +397,8 @@ namespace Application.Services
                 // **Encolamos** el trabajo de procesar este Todo
                 if (response.Successful)
                     _queue.Enqueue(todo);
+                _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+
             }
             catch (ArgumentException ex)
             {
@@ -320,7 +413,7 @@ namespace Application.Services
         }
 
         //----------------------------------------------------------------------------------------------
-        //Metod privados para mapear los objetos de respuesta
+        //Metodo privados para mapear los objetos de respuesta
         //----------------------------------------------------------------------------------------------
         private TodoResponseDTO MapToResponseDto(Todo t) => new TodoResponseDTO
         {
@@ -335,6 +428,7 @@ namespace Application.Services
             AdditionalData = t.AdditionalData,
             DaysRemaining = CalcDaysRemaining(t)
         };
+
 
         // Func que calcula días restantes de manera reutilizable
         private static readonly Func<Todo, int> CalcDaysRemaining = todo =>

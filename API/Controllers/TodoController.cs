@@ -42,11 +42,16 @@ namespace API.Controllers
             => await _todoService.GetTodoByIdAsync(id);
 
 
-        // GET: api/Todo/status/6
-        [HttpGet("status/{status}")]
-        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoByStatusAsync(int status)
-            => await _todoService.GetTodoByStatusAsync(status);
 
+
+        // Cambia la ruta para que acepte parámetros como query string, no en la ruta
+        [HttpGet("filter")]
+        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoByStatusAsync(
+            [FromQuery] int? status,
+            [FromQuery] int? priority,
+            [FromQuery] string? title,
+            [FromQuery] DateTime? dueDate)
+            => await _todoService.FilterTodoAsync(status, priority, title, dueDate);
 
 
         // POST: api/Todo
@@ -56,7 +61,7 @@ namespace API.Controllers
 
 
         // PUT: api/Todo/5
-        [HttpPut("{id}")]
+        [HttpPut("update/{id}")]
         public async Task<ActionResult<Response<string>>> UpdateTodoAsync(Todo todo, int id)
             => await _todoService.UpdateTodoAsync(todo, id);
 
@@ -64,6 +69,17 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
             => await _todoService.DeleteTodoAsync(id);
+
+
+
+        // GET /api/todo/porcentaje-completadas
+        [HttpGet("porcentaje-completadas")]
+        public async Task<IActionResult> GetPorcentajeCompletadas()
+        {
+            double porcentaje = await _todoService.ContarTareasCompletadasAsync();
+            return Ok(new { PorcentajeCompletadas = porcentaje });
+        }
+
 
 
         //POST: api/Todo/high(prioridad alta)

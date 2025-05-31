@@ -16,7 +16,6 @@ namespace Infraestructure.Repositories
             _context = context;
         }
 
-
         // Método para obtener todos los elementos de la tabla Todos
         public async Task<IEnumerable<Todo>> GetAllAsync()
             => await _context.Todos.ToListAsync();
@@ -28,10 +27,47 @@ namespace Infraestructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Todo>> GetByPriorityAsync(int priority)
+        {
+            return await _context.Todos
+                .Where(x => x.Priority == (Priority)priority)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Todo>> GetByTitleAsync(string title)
+        {
+            return await _context.Todos
+                .Where(x => x.Title.Contains(title))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Todo>> filterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate) 
+        {
+            var query = _context.Todos.AsQueryable();
+            if (status.HasValue)
+            {
+                query = query.Where(x => x.Status == (Status)status.Value);
+            }
+            if (priority.HasValue)
+            {
+                query = query.Where(x => x.Priority == (Priority)priority.Value);
+            }
+            if (!string.IsNullOrEmpty(title))
+            {
+                query = query.Where(x => x.Title.Contains(title));
+            }
+            if (dueDate.HasValue)
+            {
+                query = query.Where(x => x.DueDate.HasValue && x.DueDate.Value.Date == dueDate.Value.Date);
+            }
+            return await query.ToListAsync();
+        }
 
         // Método para obtener un elemento por su Id
         public async Task<Todo> GetByIdAsync(int id)
             => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id);
+
+
 
 
         public async Task<(bool IsSucces, string Message)> AddAsync(Todo entity)
@@ -105,6 +141,33 @@ namespace Infraestructure.Repositories
                 // Manejo de excepciones
                 throw new Exception(ex + ": Error al eliminar el elemento de la base de datos.");
             }
+        }
+
+        public async Task<double> ContarTareasCompletadasAsync()
+        {
+            // Conteo total de tareas
+            int totalCount = await _context.Todos.CountAsync();
+
+            if (totalCount == 0)
+                return 0.0;
+
+            // Conteo de tareas completadas
+            int completedCount = await _context.Todos
+                .CountAsync(t => t.Status == Status.Completado);
+
+            return (double)completedCount * 100.0 / totalCount;
+        }
+
+        public async Task<double> ContarTareasPendientesAsync()
+        {
+            // Conteo total de tareas
+            int totalCount = await _context.Todos.CountAsync();
+            if (totalCount == 0)
+                return 0.0;
+            // Conteo de tareas pendientes
+            int pendingCount = await _context.Todos
+                .CountAsync(t => t.Status == Status.Pendiente);
+            return (double)pendingCount * 100.0 / totalCount;
         }
     }
 
