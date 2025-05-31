@@ -42,6 +42,13 @@ namespace API.Controllers
             => await _todoService.GetTodoByIdAsync(id);
 
 
+        // GET: api/Todo/status/6
+        [HttpGet("status/{status}")]
+        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoByStatusAsync(int status)
+            => await _todoService.GetTodoByStatusAsync(status);
+
+
+
         // POST: api/Todo
         [HttpPost]
         public async Task<ActionResult<Response<string>>> AddTodoAsync(Todo todo)

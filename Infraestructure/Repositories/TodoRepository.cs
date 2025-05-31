@@ -1,11 +1,12 @@
 ﻿using Domain.Entities;
+using Domain.Enums;
 using Domain.Interfaces;
 using Infraestructure.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infraestructure.Repositories
 {
-    public class TodoRepository : IGenericRepository<Todo>
+    public class TodoRepository : ITodoRepository
     {
         // Inyectamos el contexto de la base de datos
         private readonly AppDbContext _context;
@@ -19,6 +20,14 @@ namespace Infraestructure.Repositories
         // Método para obtener todos los elementos de la tabla Todos
         public async Task<IEnumerable<Todo>> GetAllAsync()
             => await _context.Todos.ToListAsync();
+
+        public async Task<IEnumerable<Todo>> GetByStatusAsync(int status) 
+        {
+            return await _context.Todos
+                .Where(x => x.Status == (Status)status)
+                .ToListAsync();
+        }
+
 
         // Método para obtener un elemento por su Id
         public async Task<Todo> GetByIdAsync(int id)

@@ -1,5 +1,7 @@
 ﻿
 
+using Domain.Entities;
+
 namespace Domain.Interfaces
 {
     public interface IGenericRepository<T> where T : class
@@ -9,5 +11,6 @@ namespace Domain.Interfaces
         Task <(bool IsSucces, string Message)> AddAsync(T entity);
         Task<(bool IsSucces, string Message)> UpdateAsync(T entity);
         Task<(bool IsSucces, string Message)> DeleteAsync(int id);
+
     }
 }

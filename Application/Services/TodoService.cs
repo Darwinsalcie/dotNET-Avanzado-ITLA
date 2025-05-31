@@ -13,12 +13,12 @@ namespace Application.Services
 {
     public class TodoService : ITodoService
     {
-        private readonly IGenericRepository<Todo> _repository;
+        private readonly ITodoRepository _todoRepository;
         private readonly ITodoFactory _factory;
         private readonly ITodoProcessingQueue _queue;
-        public TodoService(IGenericRepository<Todo> repository, ITodoFactory factory, ITodoProcessingQueue queue)
+        public TodoService(ITodoRepository todoRepository, ITodoFactory factory, ITodoProcessingQueue queue)
         {
-            _repository = repository;
+            _todoRepository = todoRepository;
             _factory = factory;
             _queue = queue;
         }
@@ -32,7 +32,7 @@ namespace Application.Services
             try
             {
 
-                var todos = await _repository.GetAllAsync();
+                var todos = await _todoRepository.GetAllAsync();
                 response.DataList = todos.Select(MapToResponseDto).ToList();
                 response.Successful = true;
             }
@@ -45,6 +45,14 @@ namespace Application.Services
             return response;
         }
 
+        public async Task<Response<TodoResponseDTO>> GetTodoByStatusAsync(int status ) 
+        {
+            var response = new Response<TodoResponseDTO>();
+            var todos = await _todoRepository.GetByStatusAsync(status);
+            response.DataList = todos.Select(MapToResponseDto).ToList();
+
+            return response;
+        }
         public async Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id)
         {
             var response = new Response<TodoResponseDTO>();
@@ -53,7 +61,7 @@ namespace Application.Services
                 // Usamos el GetbyIdAsync del Repositorio
                 // y lo asignamos a la propiedad DataList de la respuesta
                 // para así poder usarlo o enviarlo en el servicio
-                var t = await _repository.GetByIdAsync(id);
+                var t = await _todoRepository.GetByIdAsync(id);
 
                 if (t is null)
                 {
@@ -109,7 +117,7 @@ namespace Application.Services
                 // de manera simultánea, el await no bloquea otras peticiones.
 
                 //Await las async/await tasks hacen que el programa espere hasta que las tareas se completen
-                var result = await _repository.AddAsync(todo);
+                var result = await _todoRepository.AddAsync(todo);
                 response.Message = result.Message;
 
                 response.Successful = result.IsSucces;
@@ -150,7 +158,7 @@ namespace Application.Services
         {
             var response = new Response<string>();
 
-            var t = await _repository.GetByIdAsync(id);
+            var t = await _todoRepository.GetByIdAsync(id);
             if (t is null)
             {
                 response.Successful = false;
@@ -180,7 +188,7 @@ namespace Application.Services
                     // Usamos el UpdateAsync del Repositorio
                     // y lo asignamos a la propiedad DataList de la respuesta
                     // para así poder usarlo o enviarlo en el servicio
-                    var result = await _repository.UpdateAsync(todo);
+                    var result = await _todoRepository.UpdateAsync(todo);
                     response.Message = result.Message;
 
                     response.Successful = result.IsSucces;
@@ -204,7 +212,7 @@ namespace Application.Services
             var response = new Response<string>();
 
             // 1. Recupera la entidad para poder encolarla luego
-            var todo = await _repository.GetByIdAsync(id);
+            var todo = await _todoRepository.GetByIdAsync(id);
             if (todo is null)
             {
                 response.Successful = false;
@@ -215,7 +223,7 @@ namespace Application.Services
             try
             {
                 // 2. Elimina en el repositorio
-                var result = await _repository.DeleteAsync(id);
+                var result = await _todoRepository.DeleteAsync(id);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
 
@@ -239,7 +247,7 @@ namespace Application.Services
             try
             {
                 var todo = _factory.CreateHighPriority(dto);
-                var result = await _repository.AddAsync(todo);
+                var result = await _todoRepository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
 
@@ -265,7 +273,7 @@ namespace Application.Services
             try
             {
                 var todo = _factory.CreateMediumPriority(dto);
-                var result = await _repository.AddAsync(todo);
+                var result = await _todoRepository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
 
@@ -291,7 +299,7 @@ namespace Application.Services
             try
             {
                 var todo = _factory.CreateLowPriority(dto);
-                var result = await _repository.AddAsync(todo);
+                var result = await _todoRepository.AddAsync(todo);
                 response.Message = result.Message;
                 response.Successful = result.IsSucces;
 

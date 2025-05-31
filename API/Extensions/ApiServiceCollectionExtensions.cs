@@ -15,8 +15,13 @@ namespace API.Extensions
         public static IServiceCollection AddApiServices(this IServiceCollection services)
         {
 
-            // Repositorio genérico (Scoped)
-            services.AddScoped(typeof(IGenericRepository<Todo>), typeof(TodoRepository));
+            // 1) Registrar el repositorio específico de Todo
+            services.AddScoped<ITodoRepository, TodoRepository>();
+
+
+            // 2) (Opcional) También se puede seguir registrando la interfaz genérica, 
+            //    en caso de que en algún otro lugar quiera inyectar IGenericRepository<Todo>
+            services.AddScoped<IGenericRepository<Todo>, TodoRepository>();
 
             // Validación de DTOs
             services.AddScoped<CreateTodoDtoValidator>();
@@ -32,6 +37,8 @@ namespace API.Extensions
                     subscribeOnScheduler: TaskPoolScheduler.Default,
                     observeOnScheduler: TaskPoolScheduler.Default));
 
+           
+            
             // Servicios de aplicación 
             services.AddScoped<ITodoService, TodoService>();
 
@@ -48,8 +55,6 @@ namespace API.Extensions
             services.AddScoped<Action<Todo>>(_ =>
                 todo => Console.WriteLine($"[Notification] Todo #{todo.Id} – {todo.Title}")
             );
-
-
 
 
             services.AddControllers();

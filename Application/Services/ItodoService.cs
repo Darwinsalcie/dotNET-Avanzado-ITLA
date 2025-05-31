@@ -10,6 +10,7 @@ namespace Application.Services
     {
         Task<Response<TodoResponseDTO>> GetTodoAllAsync();
         Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id);
+        Task<Response<TodoResponseDTO>> GetTodoByStatusAsync(int id);
         Task<Response<string>> AddTodoAsync(Todo request);
         Task<Response<string>> UpdateTodoAsync(Todo request, int Id);
         Task<Response<string>> DeleteTodoAsync(int id);

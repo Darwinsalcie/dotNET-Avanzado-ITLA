@@ -15,7 +15,6 @@ namespace Domain.Enums
         0000 0011    */
 
 
-
     public enum Priority : byte
     {
         Low,
