@@ -1,19 +1,46 @@
-﻿using Application.Events.Interfaces;
+﻿using Application.DTOs.Security;
+using Application.Events.Interfaces;
 using Application.Factory;
 using Application.Services;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Security;
 using Infraestructure.Repositories;
 using Infrastructure.Events;
+using Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using System.Reactive.Concurrency;
+using System.Text;
 
 namespace API.Extensions
 {
     public static class ApiServiceCollectionExtensions
     {
-        public static IServiceCollection AddApiServices(this IServiceCollection services)
+        public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
         {
+            //Servicios de Auentication y Authorization
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IAuthRepository, AuthRepository>();
+
+            // Configuracion JWT
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:SecretKey"]!)),
+                        ValidateIssuer = true,
+                        ValidIssuer = configuration["JWT:Issuer"],
+                        ValidateAudience = true,
+                        ValidAudience = configuration["JWT:Audience"],
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
 
             // 1) Registrar el repositorio específico de Todo
             services.AddScoped<ITodoRepository, TodoRepository>();
@@ -59,7 +86,7 @@ namespace API.Extensions
 
             services.AddControllers();
             services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
+
             return services;
         }
     }

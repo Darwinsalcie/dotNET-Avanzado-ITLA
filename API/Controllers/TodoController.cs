@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.RequesDTO;
 using Application.Services;
 using API.Extensions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TodoController : ControllerBase
     {
 
@@ -46,7 +48,7 @@ namespace API.Controllers
 
         // Cambia la ruta para que acepte parámetros como query string, no en la ruta
         [HttpGet("filter")]
-        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoByStatusAsync(
+        public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodobyFilter(
             [FromQuery] int? status,
             [FromQuery] int? priority,
             [FromQuery] string? title,
@@ -67,6 +69,7 @@ namespace API.Controllers
 
         // DELETE: api/Todo/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
             => await _todoService.DeleteTodoAsync(id);
 

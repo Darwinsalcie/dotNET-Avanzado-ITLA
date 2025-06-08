@@ -1,5 +1,5 @@
 ﻿using Domain.Entities;
-
+using Domain.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infraestructure.Context
@@ -13,6 +13,7 @@ namespace Infraestructure.Context
 
         // Si no se quiere hacer override la forma sencilla de hacerlo es:
         public DbSet<Todo> Todos { get; set; }
+        public DbSet<User> Users { get; set; }
 
         // Para cambiar el nombre de la tabla se haría un override de OnModelCreating
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,6 +21,8 @@ namespace Infraestructure.Context
             // Cambiamos el nombre de la tabla a "TodoList"
             modelBuilder.Entity<Todo>().ToTable("Todo");
             // Otras configuraciones de la base de datos
+
+            modelBuilder.Entity<User>().ToTable("User");
         }
 
 
