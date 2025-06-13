@@ -1,4 +1,5 @@
 using API.Extensions;
+using API.Hubs;
 using API.Middlewares;
 using Infraestructure.Context;
 using Infraestructure.Data;
@@ -78,6 +79,8 @@ app.UseAuthorization();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapControllers();
+
+app.MapHub<NotificationHub>("/ReceiveNotificacion");
 
 // Seed de datos
 using (var scope = app.Services.CreateScope())

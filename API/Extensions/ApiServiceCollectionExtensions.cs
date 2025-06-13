@@ -1,9 +1,12 @@
-﻿using Application.DTOs.Security;
+﻿using API.Services;
+using Application.DTOs.EventHandler;
+using Application.DTOs.Security;
 using Application.Events.Interfaces;
 using Application.Factory;
 using Application.Services;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.Entities;
+using Domain.Events;
 using Domain.Interfaces;
 using Domain.Security;
 using Infraestructure.Repositories;
@@ -86,6 +89,12 @@ namespace API.Extensions
 
             services.AddControllers();
             services.AddEndpointsApiExplorer();
+            services.AddSignalR();
+
+            services.AddScoped<IPublisher, InMemoryPublisher>();
+            services.AddScoped<INotificationPublisher, SignalRNotificationPublisher>();
+            services.AddScoped<IEventHandler<TodoCreatedEvent>, TodoCreatedEventHandler>();
+
 
             return services;
         }

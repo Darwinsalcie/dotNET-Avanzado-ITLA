@@ -1,5 +1,6 @@
 ﻿
 
+using Application.DTOs.EventHandler;
 using Application.DTOs.RequesDTO;
 using Application.DTOs.Response;
 using Application.Events.Interfaces;
@@ -7,7 +8,7 @@ using Application.Factory;
 using Application.ValidateDTO.ValidateTodo;
 using Domain.DTOs;
 using Domain.Entities;
-using Domain.Enums;
+using Domain.Events;
 using Domain.Interfaces;
 using System.Collections.Concurrent;
 
@@ -18,6 +19,7 @@ namespace Application.Services
         private readonly ITodoRepository _todoRepository;
         private readonly ITodoFactory _factory;
         private readonly ITodoProcessingQueue _queue;
+        private readonly IPublisher _publisher;
 
         // ------- MEMOIZATION CACHES -------
         // Para el filtro, guardaremos listas de DTO ya mapeadas:
@@ -28,11 +30,13 @@ namespace Application.Services
         private static readonly ConcurrentDictionary<string, double> _cachePorcentaje
             = new ConcurrentDictionary<string, double>();
         // ----------------------------------
-        public TodoService(ITodoRepository todoRepository, ITodoFactory factory, ITodoProcessingQueue queue)
+
+        public TodoService(ITodoRepository todoRepository, ITodoFactory factory, ITodoProcessingQueue queue, IPublisher publisher)
         {
             _todoRepository = todoRepository;
             _factory = factory;
             _queue = queue;
+            _publisher = publisher;
         }
 
         ValidateTodoDto ValidateTodoDto = new ValidateTodoDto();
@@ -180,10 +184,18 @@ namespace Application.Services
 
                 //Si la tarea fue exitosa , la encolamos para luego hacer algo con el resultado como enviar un correo, notificar, etc.
 
-                if (response.Successful)
+                if (response.Successful) 
+                {
+                    // 1) Encolar
                     _queue.Enqueue(todo);
-                _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
 
+                    // 2) Publicar evento de dominio
+                    var evt = new TodoCreatedEvent(todo.Id, todo.Title, todo.CreatedAt);
+                    Console.WriteLine($"[TodoService] Publicando TaskCreatedEvent para tarea #{todo.Id}");
+                    await _publisher.PublishAsync(evt);
+
+                }
 
             }
             catch (Exception ex)
@@ -196,7 +208,6 @@ namespace Application.Services
 
             //Devolvemos la respuesta
             return response;
-
 
         }
         public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
@@ -437,6 +448,6 @@ namespace Application.Services
                 : 0;
 
 
-    }
+    }  
 
 }
