@@ -44,8 +44,6 @@ namespace API.Controllers
             => await _todoService.GetTodoByIdAsync(id);
 
 
-
-
         // Cambia la ruta para que acepte parámetros como query string, no en la ruta
         [HttpGet("filter")]
         public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodobyFilter(

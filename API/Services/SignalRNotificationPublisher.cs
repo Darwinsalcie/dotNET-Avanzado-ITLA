@@ -12,8 +12,6 @@ namespace API.Services
 
         public Task PublishTodoCreatedAsync(int taskId, string title, DateTime createdAt)
         {
-            Console.WriteLine($"[SignalRPublisher] Enviando notificación de tarea #{taskId}");  // <-- traza
-
             var payload = new { Id = taskId, Title = title, CreatedAt = createdAt };
             return _hub.Clients.All.SendAsync("ReceiveNotificacion", payload);
         }

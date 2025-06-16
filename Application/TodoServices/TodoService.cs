@@ -192,9 +192,8 @@ namespace Application.Services
 
                     // 2) Publicar evento de dominio
                     var evt = new TodoCreatedEvent(todo.Id, todo.Title, todo.CreatedAt);
-                    Console.WriteLine($"[TodoService] Publicando TaskCreatedEvent para tarea #{todo.Id}");
+                    //Console.WriteLine($"[TodoService] Publicando TaskCreatedEvent para tarea #{todo.Id}");
                     await _publisher.PublishAsync(evt);
-
                 }
 
             }
