@@ -43,6 +43,12 @@ namespace Infraestructure.Repositories
 
         public async Task<IEnumerable<Todo>> filterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate) 
         {
+            // Al usar _context.Todos.AsQueryable(), se obtiene un objeto IQueryable que permite construir consultas de manera dinámica.
+            // Cada vez que se agrega un filtro con .Where(), no se ejecuta la consulta inmediatamente, sino que se va construyendo una expresión.
+            // Entity Framework Core traduce toda la expresión LINQ a una sola consulta SQL cuando se llama a ToListAsync().
+            // Por ejemplo, si se agregan varios .Where(), el SQL generado incluirá todas las condiciones en la cláusula WHERE.
+            // Esto significa que solo se traen de la base de datos los registros que cumplen con los filtros, y no toda la tabla.
+            // En resumen: .Where() en LINQ se traduce a WHERE en SQL, y ToListAsync() ejecuta el SELECT final con todos los filtros aplicados.
             var query = _context.Todos.AsQueryable();
             if (status.HasValue)
             {
@@ -68,8 +74,7 @@ namespace Infraestructure.Repositories
             => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id);
 
 
-
-
+        // CRUDS
         public async Task<(bool IsSucces, string Message)> AddAsync(Todo entity)
         {
             try
@@ -143,6 +148,8 @@ namespace Infraestructure.Repositories
             }
         }
 
+
+        //Métodos adicionales para contar tareas completadas y pendientes
         public async Task<double> ContarTareasCompletadasAsync()
         {
             // Conteo total de tareas

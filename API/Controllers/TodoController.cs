@@ -35,6 +35,9 @@ namespace API.Controllers
          como 200, 400, 500, etc.
          */
 
+        //public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoAllAsync()
+        //   => await _todoService.GetTodoAllAsync();
+
         public async Task<ActionResult<Response<TodoResponseDTO>>> GetTodoAllAsync()
             => await _todoService.GetTodoAllAsync();
 

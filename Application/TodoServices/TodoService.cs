@@ -47,8 +47,21 @@ namespace Application.Services
 
             try
             {
-
                 var todos = await _todoRepository.GetAllAsync();
+
+                //Hacemos un select con linq a el todo que es un IEnumerable
+                /*Select recibe una lambda sobre lo que queremos traer del objeto Todo
+                Ej: t => new TodoResponseDTO { Id = t.Id, Title = t.Title}
+                En vez de pasar los capos podemos pasarle un objeto o un objeto anonimo
+                
+                Ej: t => new Todo { 
+                                t.Id, 
+                                t.Title 
+                                   }
+                */
+                //Acá estamos pasando un MapResponse que devuelve TodosResponseDTO
+                // Y select va tomando los campos de cada Todo y los asigna a los campos del DTO
+                //Le pasamos a select un metodo privado que asigna valores a las proiedades del nuevo dto que crea
                 response.DataList = todos.Select(MapToResponseDto).ToList();
                 response.Successful = true;
             }
@@ -83,6 +96,14 @@ namespace Application.Services
             // 2. Obtener (o calcular+almacenar) la lista de DTO en _cacheFiltro
             var listaDto = _cacheFiltro.GetOrAdd(cacheKey, key =>
             {
+
+                /*GetorAdd explicación: 
+                 
+                 Dime si entendí, .GetorAdd agrega un key y un value al 
+                 diccionario si esa clave no existe. Retorna el valor 
+                 nuevo o el valor existente si la clave ya existía. 
+                 */
+
                 // Si no existe aún en el diccionario, esto se ejecuta:
                 // - Llamamos al repositorio para obtener dominio Todo
                 // - Mapeamos a DTO
@@ -425,6 +446,9 @@ namespace Application.Services
         //----------------------------------------------------------------------------------------------
         //Metodo privados para mapear los objetos de respuesta
         //----------------------------------------------------------------------------------------------
+
+        //Este es un metodo privado que devuelve un TodoResponseDTO
+        // Crea un nuevo objeto TodoResponseDTO y asigna las propiedades del objeto Todo a las propiedades del DTO.
         private TodoResponseDTO MapToResponseDto(Todo t) => new TodoResponseDTO
         {
             Id = t.Id,
