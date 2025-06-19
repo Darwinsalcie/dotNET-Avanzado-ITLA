@@ -4,17 +4,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Moq;
-using Xunit;
 using Application.DTOs.Response;
 using Domain.DTOs;
-using System.Threading.Tasks;
 namespace UnitTesting
 {
-    public class TodoTesting
+    public class TodoControllerTests
     {
         private readonly TodoController _todoController;
         private readonly Mock<ITodoService> _mockTodoService;
-        public TodoTesting()
+        public TodoControllerTests()
         {
             // 1. Mock del servicio
             _mockTodoService = new Mock<ITodoService>();

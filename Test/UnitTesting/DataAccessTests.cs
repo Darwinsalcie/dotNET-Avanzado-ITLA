@@ -1,12 +1,8 @@
 ﻿using System.Security.Claims;
-using Application.DTOs.Response;
 using Application.Services;
-using Domain.Entities;
-using Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using Xunit;
 using API.Controllers;
 using Domain.DTOs;
 
