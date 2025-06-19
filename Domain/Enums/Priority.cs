@@ -29,7 +29,7 @@ namespace Domain.Enums
         EnProceso,
         Completado,
         Cancelado = 4,
-        Todos = Pendiente | EnProceso | Completado | Cancelado
+        //Todos = Pendiente | EnProceso | Completado | Cancelado
         //Tambien se pueden crear grupos como por ejemplo:
         //Todos = Pendiente | EnProceso | Completado | Cancelado
     }

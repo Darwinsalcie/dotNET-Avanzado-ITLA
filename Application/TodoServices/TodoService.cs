@@ -40,6 +40,7 @@ namespace Application.Services
         }
 
         ValidateTodoDto ValidateTodoDto = new ValidateTodoDto();
+        CreateTodoDtoValidator CreateTodoDtoValidator = new CreateTodoDtoValidator();
 
         public async Task<Response<TodoResponseDTO>> GetTodoAllAsync()
         {
@@ -156,6 +157,7 @@ namespace Application.Services
             //Devolvemos la respuesta
             return response;
         }
+        
         public async Task<Response<string>> AddTodoAsync(Todo todo)
         {
 
@@ -167,7 +169,8 @@ namespace Application.Services
             if (errors.Any())
             {
                 response.Successful = false;
-                response.Message = "La fecha de vencimiento no puede ser anterior a la fecha actual.";
+                response.Message = "Se han encontrado los siguientes errores:";
+                response.Errors = errors;
                 return response;
             }
 
@@ -232,6 +235,7 @@ namespace Application.Services
         }
         public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
         {
+
             var response = new Response<string>();
 
             var t = await _todoRepository.GetByIdAsync(id);
@@ -244,15 +248,17 @@ namespace Application.Services
                 return response;
             }
 
+            var errors = ValidateTodoDto.Validate(todo);
 
             Func<Todo, bool> validate = todo =>
             !string.IsNullOrEmpty(todo.Title)
             && todo.DueDate.HasValue && todo.DueDate > DateTime.UtcNow;
 
-            if (!validate(todo))
+            if (!validate(todo) || errors.Any() )
             {
                 response.Successful = false;
-                response.Message = "La fecha de vencimiento no puede ser anterior a la fecha actual.";
+                response.Message = "Debe introducir una fecha y Titulos Válidos";
+                response.Errors = errors;
                 return response;
             }
 
@@ -289,6 +295,7 @@ namespace Application.Services
         //{
         //    return await _todoRepository.ContarTareasCompletadasAsync();
         //}
+
         public async Task<double> ContarTareasCompletadasAsync()
         {
             const string cacheKey = "PorcentajeTareasCompletadas";
@@ -361,7 +368,19 @@ namespace Application.Services
 
         public async Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto)
         {
+            var errors = CreateTodoDtoValidator.Validate(dto);
             var response = new Response<string>();
+
+
+            if (errors.Any())
+            {
+                response.Successful = false;
+                response.Message = "Esta tarea ya existe en la base de datos";
+                response.Errors = errors;
+                return response;
+            }
+
+
             try
             {
                 var todo = _factory.CreateHighPriority(dto);
@@ -389,7 +408,18 @@ namespace Application.Services
 
         public async Task<Response<string>> AddMediumPriorityTodoAsync(CreateTodoRequestDto dto)
         {
+            var errors = CreateTodoDtoValidator.Validate(dto);
             var response = new Response<string>();
+
+
+            if (errors.Any())
+            {
+                response.Successful = false;
+                response.Message = "Esta tarea ya existe en la base de datos";
+                response.Errors = errors;
+                return response;
+            }
+
             try
             {
                 var todo = _factory.CreateMediumPriority(dto);
@@ -417,7 +447,18 @@ namespace Application.Services
 
         public async Task<Response<string>> AddLowPriorityTodoAsync(CreateTodoRequestDto dto)
         {
+            var errors = CreateTodoDtoValidator.Validate(dto);
             var response = new Response<string>();
+
+
+            if (errors.Any())
+            {
+                response.Successful = false;
+                response.Message = "Esta tarea ya existe en la base de datos";
+                response.Errors = errors;
+                return response;
+            }
+
             try
             {
                 var todo = _factory.CreateLowPriority(dto);
