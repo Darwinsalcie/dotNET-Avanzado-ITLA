@@ -18,26 +18,26 @@ namespace Infraestructure.Repositories
 
         // Método para obtener todos los elementos de la tabla Todos
         public async Task<IEnumerable<Todo>> GetAllAsync()
-            => await _context.Todos.ToListAsync();
+            => await _context.Todos.Where(x => !x.IsDeleted).ToListAsync();
 
         public async Task<IEnumerable<Todo>> GetByStatusAsync(int status) 
         {
             return await _context.Todos
-                .Where(x => x.Status == (Status)status)
+                .Where(x => x.Status == (Status)status && !x.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Todo>> GetByPriorityAsync(int priority)
         {
             return await _context.Todos
-                .Where(x => x.Priority == (Priority)priority)
+                .Where(x => x.Priority == (Priority)priority && !x.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Todo>> GetByTitleAsync(string title)
         {
             return await _context.Todos
-                .Where(x => x.Title.Contains(title))
+                .Where(x => x.Title.Contains(title) && !x.IsDeleted)
                 .ToListAsync();
         }
 
@@ -52,26 +52,26 @@ namespace Infraestructure.Repositories
             var query = _context.Todos.AsQueryable();
             if (status.HasValue)
             {
-                query = query.Where(x => x.Status == (Status)status.Value);
+                query = query.Where(x => x.Status == (Status)status.Value && !x.IsDeleted);
             }
             if (priority.HasValue)
             {
-                query = query.Where(x => x.Priority == (Priority)priority.Value);
+                query = query.Where(x => x.Priority == (Priority)priority.Value && !x.IsDeleted);
             }
             if (!string.IsNullOrEmpty(title))
             {
-                query = query.Where(x => x.Title.Contains(title));
+                query = query.Where(x => x.Title.Contains(title) && !x.IsDeleted);
             }
             if (dueDate.HasValue)
             {
-                query = query.Where(x => x.DueDate.HasValue && x.DueDate.Value.Date == dueDate.Value.Date);
+                query = query.Where(x => x.DueDate.HasValue && x.DueDate.Value.Date == dueDate.Value.Date && !x.IsDeleted);
             }
             return await query.ToListAsync();
         }
 
         // Método para obtener un elemento por su Id
         public async Task<Todo> GetByIdAsync(int id)
-            => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id);
+            => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
 
         // CRUDS
@@ -148,19 +148,46 @@ namespace Infraestructure.Repositories
             }
         }
 
+        public async Task<(bool IsSucces, string Message)> DeleteSoftAsync(int id)
+        {
+            try
+            {
+                // Buscamos el elemento por su Id para ver si existe
+                var todo = await _context.Todos.FindAsync(id);
+
+                // Si existe y no está eliminado, marcamos como eliminado (soft delete)
+                if (todo != null && !todo.IsDeleted)
+                {
+                    todo.IsDeleted = true;
+                    _context.Todos.Update(todo);
+                    await _context.SaveChangesAsync();
+                    return (true, "Tarea eliminada correctamente (soft delete).");
+                }
+                else
+                {
+                    return (false, "No se encontró el elemento a eliminar o ya está eliminado.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error al eliminar el elemento de la base de datos.");
+                // throw new Exception(ex + ": Error al eliminar el elemento de la base de datos.");
+            }
+        }
+
 
         //Métodos adicionales para contar tareas completadas y pendientes
         public async Task<double> ContarTareasCompletadasAsync()
         {
             // Conteo total de tareas
-            int totalCount = await _context.Todos.CountAsync();
+            int totalCount = await _context.Todos.CountAsync(t => !t.IsDeleted);
 
             if (totalCount == 0)
                 return 0.0;
 
             // Conteo de tareas completadas
             int completedCount = await _context.Todos
-                .CountAsync(t => t.Status == Status.Completado);
+                .CountAsync(t => t.Status == Status.Completado && !t.IsDeleted);
 
             return (double)completedCount * 100.0 / totalCount;
         }
@@ -168,12 +195,12 @@ namespace Infraestructure.Repositories
         public async Task<double> ContarTareasPendientesAsync()
         {
             // Conteo total de tareas
-            int totalCount = await _context.Todos.CountAsync();
+            int totalCount = await _context.Todos.CountAsync(t => !t.IsDeleted);
             if (totalCount == 0)
                 return 0.0;
             // Conteo de tareas pendientes
             int pendingCount = await _context.Todos
-                .CountAsync(t => t.Status == Status.Pendiente);
+                .CountAsync(t => t.Status == Status.Pendiente && !t.IsDeleted);
             return (double)pendingCount * 100.0 / totalCount;
         }
     }

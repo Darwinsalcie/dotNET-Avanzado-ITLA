@@ -369,6 +369,43 @@ namespace Application.Services
             return response;
         }
 
+
+        public async Task<Response<string>> DeleteSoftTodoAsync(int id)
+        {
+            var response = new Response<string>();
+
+            // 1. Recupera la entidad para poder encolarla luego
+            var todo = await _todoRepository.GetByIdAsync(id);
+            if (todo is null)
+            {
+                response.Successful = false;
+                response.Message = "El elemento no existe.";
+                return response;
+            }
+
+            try
+            {
+                // 2. Soft delete en el repositorio
+                var result = await _todoRepository.DeleteSoftAsync(id);
+                response.Message = result.Message;
+                response.Successful = result.IsSucces;
+
+                // 3. Encola solo si la eliminación fue exitosa
+                if (response.Successful)
+                {
+                    _queue.Enqueue(todo);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Errors.Add(ex.Message);
+            }
+
+            return response;
+        }
+
         public async Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto)
         {
             var errors = CreateTodoDtoValidator.Validate(dto);
@@ -501,7 +538,7 @@ namespace Application.Services
             Id = t.Id,
             Title = t.Title,
             Description = t.Description,
-            IsCompleted = t.IsCompleted,
+            IsDeleted = t.IsDeleted,
             CreatedAt = t.CreatedAt,
             DueDate = t.DueDate,
             Status = t.Status,

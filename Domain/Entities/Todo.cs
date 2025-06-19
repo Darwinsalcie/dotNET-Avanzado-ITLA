@@ -10,7 +10,7 @@ namespace Domain.Entities
         public string? Description { get; private set; }
         public DateTime CreatedAt { get;  private set; }
         public DateTime? DueDate { get;  private set; }
-        public bool IsCompleted { get;  private set; }
+        public bool IsDeleted { get;  set; }
         public Status Status { get;  private set; }
         public Priority? Priority { get;  private set; }
         public string? AdditionalData { get;  private set; }
@@ -29,16 +29,17 @@ namespace Domain.Entities
             Description = description;
             CreatedAt = DateTime.UtcNow;
             DueDate = dueDate;
-            IsCompleted = false;
+            IsDeleted = false;
             Status = status;
             AdditionalData = additionalData;
             Priority = priority;
+            IsDeleted = false;
 
             //if (!validate(this))
             //    throw new ArgumentException("Invalid Todo entity");
         }
 
-        public void Update(string title, string? description, DateTime? dueDate, string? additionalData, Status status, bool iscompleted, Priority? priority )
+        public void Update(string title, string? description, DateTime? dueDate, string? additionalData, Status status, bool isdeleted, Priority? priority )
         {
 
 
@@ -47,7 +48,7 @@ namespace Domain.Entities
             DueDate = dueDate;
             Status = status;
             AdditionalData = additionalData;
-            IsCompleted = iscompleted;
+            IsDeleted = isdeleted;
             Priority = priority;
 
 
@@ -57,7 +58,7 @@ namespace Domain.Entities
 
         public void MarkCompleted()
         {
-            IsCompleted = true;
+            IsDeleted = true;
         }
     }
 }

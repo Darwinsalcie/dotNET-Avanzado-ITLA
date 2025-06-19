@@ -14,6 +14,7 @@ namespace Application.Services
         Task<Response<string>> AddTodoAsync(Todo request);
         Task<Response<string>> UpdateTodoAsync(Todo request, int Id);
         Task<Response<string>> DeleteTodoAsync(int id);
+        Task<Response<string>> DeleteSoftTodoAsync(int id);
         Task<double> ContarTareasCompletadasAsync();
         Task<double> ContarTareasPendientesAsync();
         Task<Response<string>> AddHighPriorityTodoAsync(CreateTodoRequestDto dto);

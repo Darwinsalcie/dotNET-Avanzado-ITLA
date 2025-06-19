@@ -10,5 +10,7 @@ namespace Domain.Interfaces
         Task<(bool IsSucces, string Message)> UpdateAsync(T entity);
         Task<(bool IsSucces, string Message)> DeleteAsync(int id);
 
+        Task<(bool IsSucces, string Message)> DeleteSoftAsync(int id);
+
     }
 }

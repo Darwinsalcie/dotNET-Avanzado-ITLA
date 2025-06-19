@@ -89,6 +89,10 @@ namespace API.Controllers
             return await _todoService.DeleteTodoAsync(id);
         }
 
+        [HttpDelete("soft/{id}")]
+        public async Task<ActionResult<Response<string>>> SoftDeleteTodoAsync(int id)
+            => await _todoService.DeleteSoftTodoAsync(id);
+
 
         // GET /api/todo/porcentaje-completadas
         [HttpGet("porcentaje-completadas")]
