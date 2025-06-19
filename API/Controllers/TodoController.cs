@@ -69,11 +69,25 @@ namespace API.Controllers
             => await _todoService.UpdateTodoAsync(todo, id);
 
         // DELETE: api/Todo/5
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
-            => await _todoService.DeleteTodoAsync(id);
+        //[HttpDelete("{id}")]
+        //[Authorize(Roles = "Admin")]
+        //public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
+        //    => await _todoService.DeleteTodoAsync(id);
 
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Response<string>>> DeleteTodoAsync(int id)
+        {
+            if (!User.IsInRole("Admin"))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new Response<string>
+                {
+                    Successful = false,
+                    Message = "Usuario no autorizado para eliminar tareas."
+                });
+            }
+
+            return await _todoService.DeleteTodoAsync(id);
+        }
 
 
         // GET /api/todo/porcentaje-completadas
