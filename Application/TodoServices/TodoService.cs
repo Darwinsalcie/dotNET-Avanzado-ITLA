@@ -1,5 +1,4 @@
 ﻿
-
 using Application.DTOs.EventHandler;
 using Application.DTOs.RequesDTO;
 using Application.DTOs.Response;
@@ -212,7 +211,10 @@ namespace Application.Services
                 {
                     // 1) Encolar
                     _queue.Enqueue(todo);
+
+
                     _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
 
                     // 2) Publicar evento de dominio
                     var evt = new TodoCreatedEvent(todo.Id, todo.Title, todo.CreatedAt);
@@ -279,6 +281,7 @@ namespace Application.Services
                     if (response.Successful)
                         _queue.Enqueue(todo);
                     _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                    _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
 
                 }
                 catch (Exception ex)
@@ -392,6 +395,7 @@ namespace Application.Services
                 if (response.Successful)
                     _queue.Enqueue(todo);
                 _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
 
             }
             catch (ArgumentException ex)
@@ -431,6 +435,7 @@ namespace Application.Services
                 if (response.Successful)
                     _queue.Enqueue(todo);
                 _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
 
             }
             catch (ArgumentException ex)
@@ -470,6 +475,7 @@ namespace Application.Services
                 if (response.Successful)
                     _queue.Enqueue(todo);
                 _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
+                _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
 
             }
             catch (ArgumentException ex)
