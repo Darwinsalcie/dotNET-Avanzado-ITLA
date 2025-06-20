@@ -3,14 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Application.Services;
 using API.Controllers;
-using Application.DTOs.Response;
-using Domain.Entities;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Routing;
+
 using Domain.DTOs;
 
 namespace UnitTesting
@@ -19,7 +15,10 @@ namespace UnitTesting
     {
         private TodoController GetControllerWithUser(Mock<ITodoService> todoServiceMock, string? role = null, bool authenticated = true)
         {
-            var claims = new List<Claim>();
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, "1") // <-- Agrega este claim siempre
+    };
             if (role != null)
                 claims.Add(new Claim(ClaimTypes.Role, role));
             var identity = authenticated ? new ClaimsIdentity(claims, "TestAuth") : new ClaimsIdentity();
@@ -75,15 +74,15 @@ namespace UnitTesting
         public async Task DeleteTodoAsync_WithAdminRole_CallsService()
         {
             var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.DeleteTodoAsync(It.IsAny<int>()))
-                .ReturnsAsync(new Response<string> { Successful = true });
+            todoServiceMock.Setup(s => s.DeleteTodoAsync(It.IsAny<int>(), It.IsAny<int>()))
+              .ReturnsAsync(new Response<string> { Successful = true });
 
             var controller = GetControllerWithUser(todoServiceMock, "Admin");
             var id = 1;
 
             var result = await controller.DeleteTodoAsync(id);
 
-            todoServiceMock.Verify(s => s.DeleteTodoAsync(id), Times.Once);
+            todoServiceMock.Verify(s => s.DeleteTodoAsync(id, It.IsAny<int>()), Times.Once);
         }
     }
 }

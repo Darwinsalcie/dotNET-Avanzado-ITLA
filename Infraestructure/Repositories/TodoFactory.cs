@@ -52,6 +52,7 @@ namespace Infraestructure.Repositories
                 : DateTime.UtcNow.AddDays(defaultDays);
 
             return new Todo(
+                userId: dto.UserId,
                 title: dto.Title,
                 description: dto.Description,
                 dueDate: due,

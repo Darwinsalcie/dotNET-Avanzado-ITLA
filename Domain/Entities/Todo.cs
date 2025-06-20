@@ -6,6 +6,7 @@ namespace Domain.Entities
     public class Todo
     {
         public int Id { get; private set; }
+        public int UserId { get; set; }
         public string Title { get; private set; }
         public string? Description { get; private set; }
         public DateTime CreatedAt { get;  private set; }
@@ -21,10 +22,10 @@ namespace Domain.Entities
         //    !string.IsNullOrWhiteSpace(todo.Title)
         //    && (!todo.DueDate.HasValue || todo.DueDate > DateTime.UtcNow);
 
-        public Todo(string title, string? description, DateTime? dueDate, string? additionalData, Status status, Priority? priority)
+        public Todo(int userId, string title, string? description, DateTime? dueDate, string? additionalData, Status status, Priority? priority)
         {
    
-
+            UserId = userId;
             Title = title;
             Description = description;
             CreatedAt = DateTime.UtcNow;

@@ -9,10 +9,10 @@ namespace Domain.Interfaces
         Task<IEnumerable<Todo>> GetByStatusAsync(int status);
         Task<IEnumerable<Todo>> GetByPriorityAsync(int priority);
         Task<IEnumerable<Todo>> GetByTitleAsync(string title);
-        Task<IEnumerable<Todo>> filterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate);
+        Task<IEnumerable<Todo>> filterTodoAsync(int userId, int? status, int? priority, string? title, DateTime? dueDate);
 
-        Task<double> ContarTareasCompletadasAsync();
-        Task<double> ContarTareasPendientesAsync();
+        Task<double> ContarTareasCompletadasAsync(int userId);
+        Task<double> ContarTareasPendientesAsync(int userId);
 
 
     }

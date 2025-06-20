@@ -40,14 +40,15 @@ namespace Application.Services
 
         ValidateTodoDto ValidateTodoDto = new ValidateTodoDto();
         CreateTodoDtoValidator CreateTodoDtoValidator = new CreateTodoDtoValidator();
+        UpdateTodoValidator updateTodoValidator = new UpdateTodoValidator();
 
-        public async Task<Response<TodoResponseDTO>> GetTodoAllAsync()
+        public async Task<Response<TodoResponseDTO>> GetTodoAllAsync(int userId)
         {
             var response = new Response<TodoResponseDTO>();
 
             try
             {
-                var todos = await _todoRepository.GetAllAsync();
+                var todos = await _todoRepository.GetAllAsync(userId);
 
                 //Hacemos un select con linq a el todo que es un IEnumerable
                 /*Select recibe una lambda sobre lo que queremos traer del objeto Todo
@@ -88,10 +89,10 @@ namespace Application.Services
 
 
         // ------ MÉTODO FILTER con MEMOIZATION ------
-        public Task<Response<TodoResponseDTO>> FilterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate)
+        public Task<Response<TodoResponseDTO>> FilterTodoAsync(int userId, int? status, int? priority, string? title, DateTime? dueDate)
         {
             // 1. Construir clave única a partir de todos los parámetros
-            string cacheKey = $"Filtro:{status}|{priority}|{title}|{dueDate:yyyy-MM-dd}";
+            string cacheKey = $"Filtro:{userId}|{status}|{priority}|{title}|{dueDate:yyyy-MM-dd}";
 
             // 2. Obtener (o calcular+almacenar) la lista de DTO en _cacheFiltro
             var listaDto = _cacheFiltro.GetOrAdd(cacheKey, key =>
@@ -109,7 +110,7 @@ namespace Application.Services
                 // - Mapeamos a DTO
                 // NOTA: Esto es síncrono dentro de GetOrAdd; el repositorio es async,
                 //       así que bloqueamos con .Result (solo en este contexto de ejemplo).
-                var todosDominio = _todoRepository.filterTodoAsync(status, priority, title, dueDate).Result;
+                var todosDominio = _todoRepository.filterTodoAsync(userId, status, priority, title, dueDate).Result;
                 return todosDominio.Select(MapToResponseDto).ToList();
             });
 
@@ -123,7 +124,7 @@ namespace Application.Services
         }
         // -------------------------------------------
 
-        public async Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id)
+        public async Task<Response<TodoResponseDTO>> GetTodoByIdAsync(int id, int userId)
         {
             var response = new Response<TodoResponseDTO>();
             try
@@ -131,7 +132,7 @@ namespace Application.Services
                 // Usamos el GetbyIdAsync del Repositorio
                 // y lo asignamos a la propiedad DataList de la respuesta
                 // para así poder usarlo o enviarlo en el servicio
-                var t = await _todoRepository.GetByIdAsync(id);
+                var t = await _todoRepository.GetByIdAsync(id, userId);
 
                 if (t is null)
                 {
@@ -235,71 +236,77 @@ namespace Application.Services
             return response;
 
         }
-        public async Task<Response<string>> UpdateTodoAsync(Todo todo, int id)
-        {
 
+        public async Task<Response<string>> UpdateTodoAsync(int id, int userId, UpdateTodoRequestDto dto)
+        {
             var response = new Response<string>();
 
-            var t = await _todoRepository.GetByIdAsync(id);
-            if (t is null)
+            // 1. Recupera la entidad existente (sea null si no existe o no pertenece al usuario)
+            var todo = await _todoRepository.GetByIdAsync(id, userId);
+            if (todo == null)
             {
                 response.Successful = false;
-                response.Message = "El elemento no existe en la base de datos.";
-
-                //Al usar return el resto del codigo solo se ejecuta si no se entra en el if
+                response.Message = "El elemento no existe o no pertenece al usuario.";
                 return response;
             }
 
-            var errors = ValidateTodoDto.Validate(todo);
+            // 2. Validaciones básicas
+            var errors = updateTodoValidator.Validate(dto);
+            bool valid =
+                !string.IsNullOrWhiteSpace(dto.Title)
+                && (!dto.DueDate.HasValue || dto.DueDate.Value > DateTime.UtcNow);
 
-            Func<Todo, bool> validate = todo =>
-            !string.IsNullOrEmpty(todo.Title)
-            && todo.DueDate.HasValue && todo.DueDate > DateTime.UtcNow;
-
-            if (!validate(todo) || errors.Any() )
+            if (!valid || errors.Any())
             {
                 response.Successful = false;
-                response.Message = "Debe introducir una fecha y Titulos Válidos";
+                response.Message = "Debe introducir un título y fecha válidos.";
                 response.Errors = errors;
                 return response;
             }
 
-            else 
+            // 3. Aplica los cambios a la entidad recuperada
+            todo.Update(
+                title: dto.Title,
+                description: dto.Description,
+                dueDate: dto.DueDate,
+                additionalData: dto.AdditionalData,
+                status: dto.Status,
+                isdeleted: dto.IsDeleted,
+                priority: dto.Priority);
+
+            // 4. Persiste los cambios
+            try
             {
+                var result = await _todoRepository.UpdateAsync(todo);
+                response.Successful = result.IsSucces;
+                response.Message = result.Message;
 
-                try
+                if (response.Successful)
                 {
-                    // Usamos el UpdateAsync del Repositorio
-                    // y lo asignamos a la propiedad DataList de la respuesta
-                    // para así poder usarlo o enviarlo en el servicio
-                    var result = await _todoRepository.UpdateAsync(todo);
-                    response.Message = result.Message;
-
-                    response.Successful = result.IsSucces;
-
-                    // **Encolamos** el trabajo de procesar este Todo
-                    if (response.Successful)
-                        _queue.Enqueue(todo);
+                    // Encolar trabajo adicional
+                    _queue.Enqueue(todo);
                     _cachePorcentaje.TryRemove("PorcentajeTareasCompletadas", out _);
                     _cachePorcentaje.TryRemove("PorcentajeTareasPendientes", out _);
-
                 }
-                catch (Exception ex)
-                {
-                    response.Errors.Add(ex.Message);
-                }
-                //Devolvemos la respuesta
-                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Successful = false;
+                response.Message = "Error al actualizar el elemento en la base de datos.";
+                response.Errors.Add(ex.Message);
             }
 
+            return response;
         }
+
+
 
         //public async Task<double> ContarTareasCompletadasAsync()
         //{
         //    return await _todoRepository.ContarTareasCompletadasAsync();
         //}
 
-        public async Task<double> ContarTareasCompletadasAsync()
+        public async Task<double> ContarTareasCompletadasAsync(int userId)
         {
             const string cacheKey = "PorcentajeTareasCompletadas";
 
@@ -308,7 +315,7 @@ namespace Application.Services
                 return cachedValue;
 
             // 2. Si no hay valor en caché, llama al repositorio de forma asíncrona
-            double porcentaje = await _todoRepository.ContarTareasCompletadasAsync();
+            double porcentaje = await _todoRepository.ContarTareasCompletadasAsync(userId);
 
             // 3. Guarda en caché y retorna
             _cachePorcentaje[cacheKey] = porcentaje;
@@ -316,7 +323,7 @@ namespace Application.Services
         }
 
 
-        public async Task<double> ContarTareasPendientesAsync() 
+        public async Task<double> ContarTareasPendientesAsync(int userId) 
         {
             const string cacheKey = "PorcentajeTareasPendientes";
 
@@ -325,7 +332,7 @@ namespace Application.Services
                 return cachedValue;
 
             // 2. Si no hay valor en caché, llama al repositorio de forma asíncrona
-            double porcentaje = await _todoRepository.ContarTareasPendientesAsync();
+            double porcentaje = await _todoRepository.ContarTareasPendientesAsync(userId);
 
             // 3. Guarda en caché y retorna
             _cachePorcentaje[cacheKey] = porcentaje;
@@ -333,12 +340,12 @@ namespace Application.Services
         }
 
 
-        public async Task<Response<string>> DeleteTodoAsync(int id)
+        public async Task<Response<string>> DeleteTodoAsync(int id, int userId)
         {
             var response = new Response<string>();
 
             // 1. Recupera la entidad para poder encolarla luego
-            var todo = await _todoRepository.GetByIdAsync(id);
+            var todo = await _todoRepository.GetByIdAsync(id, userId);
             if (todo is null)
             {
                 response.Successful = false;
@@ -370,12 +377,12 @@ namespace Application.Services
         }
 
 
-        public async Task<Response<string>> DeleteSoftTodoAsync(int id)
+        public async Task<Response<string>> DeleteSoftTodoAsync(int id, int userId)
         {
             var response = new Response<string>();
 
             // 1. Recupera la entidad para poder encolarla luego
-            var todo = await _todoRepository.GetByIdAsync(id);
+            var todo = await _todoRepository.GetByIdAsync(id, userId);
             if (todo is null)
             {
                 response.Successful = false;

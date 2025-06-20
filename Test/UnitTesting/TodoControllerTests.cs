@@ -14,22 +14,19 @@ namespace UnitTesting
         private readonly Mock<ITodoService> _mockTodoService;
         public TodoControllerTests()
         {
-            // 1. Mock del servicio
             _mockTodoService = new Mock<ITodoService>();
-
-            // 2. Crear el controlador con el servicio mockeado
             _todoController = new TodoController(_mockTodoService.Object);
 
-            // 3. Simular autenticación (si el controlador usa [Authorize])
             _todoController.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext
                 {
                     User = new ClaimsPrincipal(new ClaimsIdentity(new[]
                     {
-                        new Claim(ClaimTypes.Name, "testuser"),
-                        new Claim(ClaimTypes.Role, "Admin")
-                    }, "mock"))
+                new Claim(ClaimTypes.Name, "testuser"),
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(ClaimTypes.NameIdentifier, "1") // <-- Agrega este claim
+            }, "mock"))
                 }
             };
         }
@@ -37,8 +34,9 @@ namespace UnitTesting
         [Fact]
         public async Task Get_Ok()
         {
+
             // 4. Configurar el mock para devolver datos de prueba
-            _mockTodoService.Setup(s => s.GetTodoAllAsync())
+            _mockTodoService.Setup(s => s.GetTodoAllAsync(1))
                 .ReturnsAsync(new Response<TodoResponseDTO>
                 {
                     DataList = new List<TodoResponseDTO>(),
@@ -58,7 +56,7 @@ namespace UnitTesting
 
             // Configura el mock para devolver un solo elemento en SingleData y DataList vacío
             //Setup
-            _mockTodoService.Setup(s => s.GetTodoByIdAsync(id))
+            _mockTodoService.Setup(s => s.GetTodoByIdAsync(id,1))
                 .ReturnsAsync(new Response<TodoResponseDTO>
                 {
                     SingleData = new TodoResponseDTO { Id = id, Title = "Test" },

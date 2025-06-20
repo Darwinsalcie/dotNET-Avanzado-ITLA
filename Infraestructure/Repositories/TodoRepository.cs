@@ -17,8 +17,8 @@ namespace Infraestructure.Repositories
         }
 
         // Método para obtener todos los elementos de la tabla Todos
-        public async Task<IEnumerable<Todo>> GetAllAsync()
-            => await _context.Todos.Where(x => !x.IsDeleted).ToListAsync();
+        public async Task<IEnumerable<Todo>> GetAllAsync(int userId)
+            => await _context.Todos.Where(x => x.UserId == userId && !x.IsDeleted).ToListAsync();
 
         public async Task<IEnumerable<Todo>> GetByStatusAsync(int status) 
         {
@@ -41,7 +41,7 @@ namespace Infraestructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Todo>> filterTodoAsync(int? status, int? priority, string? title, DateTime? dueDate) 
+        public async Task<IEnumerable<Todo>> filterTodoAsync(int userId, int? status, int? priority, string? title, DateTime? dueDate) 
         {
             // Al usar _context.Todos.AsQueryable(), se obtiene un objeto IQueryable que permite construir consultas de manera dinámica.
             // Cada vez que se agrega un filtro con .Where(), no se ejecuta la consulta inmediatamente, sino que se va construyendo una expresión.
@@ -49,29 +49,30 @@ namespace Infraestructure.Repositories
             // Por ejemplo, si se agregan varios .Where(), el SQL generado incluirá todas las condiciones en la cláusula WHERE.
             // Esto significa que solo se traen de la base de datos los registros que cumplen con los filtros, y no toda la tabla.
             // En resumen: .Where() en LINQ se traduce a WHERE en SQL, y ToListAsync() ejecuta el SELECT final con todos los filtros aplicados.
+
             var query = _context.Todos.AsQueryable();
             if (status.HasValue)
             {
-                query = query.Where(x => x.Status == (Status)status.Value && !x.IsDeleted);
+                query = query.Where(x => x.UserId == userId && x.Status == (Status)status.Value && !x.IsDeleted);
             }
             if (priority.HasValue)
             {
-                query = query.Where(x => x.Priority == (Priority)priority.Value && !x.IsDeleted);
+                query = query.Where(x => x.UserId == userId && x.Priority == (Priority)priority.Value && !x.IsDeleted);
             }
             if (!string.IsNullOrEmpty(title))
             {
-                query = query.Where(x => x.Title.Contains(title) && !x.IsDeleted);
+                query = query.Where(x => x.UserId == userId && x.Title.Contains(title) && !x.IsDeleted);
             }
             if (dueDate.HasValue)
             {
-                query = query.Where(x => x.DueDate.HasValue && x.DueDate.Value.Date == dueDate.Value.Date && !x.IsDeleted);
+                query = query.Where(x => x.UserId == userId && x.DueDate.HasValue && x.DueDate.Value.Date == dueDate.Value.Date && !x.IsDeleted);
             }
             return await query.ToListAsync();
         }
 
         // Método para obtener un elemento por su Id
-        public async Task<Todo> GetByIdAsync(int id)
-            => await _context.Todos.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+        public async Task<Todo> GetByIdAsync(int id, int userId)
+            => await _context.Todos.FirstOrDefaultAsync(x =>x.UserId == userId && x.Id == id && !x.IsDeleted);
 
 
         // CRUDS
@@ -107,7 +108,6 @@ namespace Infraestructure.Repositories
         {
             try
             {
-                _context.Todos.Update(entity);
                 await _context.SaveChangesAsync();
                 return (true, "Tarea actualizado correctamente.");
             }
@@ -177,30 +177,30 @@ namespace Infraestructure.Repositories
 
 
         //Métodos adicionales para contar tareas completadas y pendientes
-        public async Task<double> ContarTareasCompletadasAsync()
+        public async Task<double> ContarTareasCompletadasAsync(int userId)
         {
             // Conteo total de tareas
-            int totalCount = await _context.Todos.CountAsync(t => !t.IsDeleted);
+            int totalCount = await _context.Todos.CountAsync(t => t.UserId == userId && !t.IsDeleted);
 
             if (totalCount == 0)
                 return 0.0;
 
             // Conteo de tareas completadas
             int completedCount = await _context.Todos
-                .CountAsync(t => t.Status == Status.Completado && !t.IsDeleted);
+                .CountAsync(t => t.UserId == userId && t.Status == Status.Completado && !t.IsDeleted);
 
             return (double)completedCount * 100.0 / totalCount;
         }
 
-        public async Task<double> ContarTareasPendientesAsync()
+        public async Task<double> ContarTareasPendientesAsync(int userId)
         {
             // Conteo total de tareas
-            int totalCount = await _context.Todos.CountAsync(t => !t.IsDeleted);
+            int totalCount = await _context.Todos.CountAsync(t => t.UserId == userId && !t.IsDeleted);
             if (totalCount == 0)
                 return 0.0;
             // Conteo de tareas pendientes
             int pendingCount = await _context.Todos
-                .CountAsync(t => t.Status == Status.Pendiente && !t.IsDeleted);
+                .CountAsync(t => t.UserId == userId && t.Status == Status.Pendiente && !t.IsDeleted);
             return (double)pendingCount * 100.0 / totalCount;
         }
     }
