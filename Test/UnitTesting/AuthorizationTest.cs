@@ -1,88 +1,59 @@
-﻿using Xunit;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
-using Application.Services;
+﻿// AuthorizationTests.cs
 using API.Controllers;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-
+using Application.DTOs.Response;
 using Domain.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Moq;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace UnitTesting
 {
-    public class AuthorizationTest
+    public class AuthorizationTests : TestBase
     {
-        private TodoController GetControllerWithUser(Mock<ITodoService> todoServiceMock, string? role = null, bool authenticated = true)
-        {
-            var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.NameIdentifier, "1") // <-- Agrega este claim siempre
-    };
-            if (role != null)
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            var identity = authenticated ? new ClaimsIdentity(claims, "TestAuth") : new ClaimsIdentity();
-            var user = new ClaimsPrincipal(identity);
-
-            var controller = new TodoController(todoServiceMock.Object)
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext { User = user }
-                }
-            };
-            return controller;
-        }
-
         [Fact]
-        public async Task DeleteTodoAsync_WithoutAdminRole_ReturnsForbidden()
+        public async Task DeleteTodoAsync_WithoutAdminRole_HasAuthorizeAttribute()
         {
             // Arrange
-            var todoServiceMock = new Mock<ITodoService>();
-            var controller = GetControllerWithUser(todoServiceMock); // No role
-            var id = 1;
+            Authenticate();
 
             // Act
-            var result = await controller.DeleteTodoAsync(id);
+            await Controller.DeleteTodoAsync(1);
 
             // Assert
-            // Since [Authorize(Roles = "Admin")] is handled by middleware, 
-            // direct controller call will not return 403.
-            // In integration tests, this would return 403.
-            // Here, we just assert that the method is protected by the attribute.
             var method = typeof(TodoController).GetMethod("DeleteTodoAsync");
-            var hasAuthorize = method.GetCustomAttributes(typeof(AuthorizeAttribute), false)
-                .Cast<AuthorizeAttribute>()
-                .Any(a => a.Roles == "Admin");
-            Assert.True(hasAuthorize);
+            var has = method.GetCustomAttributes(typeof(AuthorizeAttribute), false)
+                             .Cast<AuthorizeAttribute>()
+                             .Any(a => a.Roles == "Admin");
+            Assert.True(has);
         }
 
         [Fact]
         public void AllEndpoints_RequireAuthentication()
         {
-            // Arrange
-            var controllerType = typeof(TodoController);
-
             // Act
-            var hasAuthorize = controllerType.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
+            var has = typeof(TodoController)
+                .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+                .Any();
 
             // Assert
-            Assert.True(hasAuthorize);
+            Assert.True(has);
         }
 
         [Fact]
         public async Task DeleteTodoAsync_WithAdminRole_CallsService()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.DeleteTodoAsync(It.IsAny<int>(), It.IsAny<int>()))
-              .ReturnsAsync(new Response<string> { Successful = true });
+            // Arrange
+            ServiceMock.Setup(s => s.DeleteTodoAsync(It.IsAny<int>(), It.IsAny<int>()))
+                       .ReturnsAsync(new Response<string> { Successful = true });
+            Authenticate(role: "Admin");
 
-            var controller = GetControllerWithUser(todoServiceMock, "Admin");
-            var id = 1;
+            // Act
+            await Controller.DeleteTodoAsync(1);
 
-            var result = await controller.DeleteTodoAsync(id);
-
-            todoServiceMock.Verify(s => s.DeleteTodoAsync(id, It.IsAny<int>()), Times.Once);
+            // Assert
+            ServiceMock.Verify(s => s.DeleteTodoAsync(1, It.IsAny<int>()), Times.Once);
         }
     }
 }

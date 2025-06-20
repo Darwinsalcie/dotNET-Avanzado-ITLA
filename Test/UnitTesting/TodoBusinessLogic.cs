@@ -1,98 +1,63 @@
-﻿using API.Controllers;
+﻿// TodoBusinessLogicTests.cs
+using API.Controllers;
 using Application.DTOs.RequesDTO;
 using Application.DTOs.Response;
-using Application.Services;
 using Domain.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace UnitTesting
 {
-    public class TodoBusinessLogicTests
+    public class TodoBusinessLogicTests : TestBase
     {
         [Fact]
         public async Task GetTodoAllAsync_ReturnsAllTodos()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.GetTodoAllAsync(1))
-                .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, DataList = new List<TodoResponseDTO>() });
+            // Arrange
+            ServiceMock.Setup(s => s.GetTodoAllAsync(1))
+                       .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, DataList = new List<TodoResponseDTO>() });
+            Authenticate(role: "Admin");
 
-            var controller = new TodoController(todoServiceMock.Object);
+            // Act
+            var res = await Controller.GetTodoAllAsync();
 
-            // Simula usuario autenticado con userId = 1
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Role, "Admin") // Simula un rol de usuario
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-
-            var result = await controller.GetTodoAllAsync();
-
-            Assert.NotNull(result.Value);
-            Assert.True(result.Value!.Successful);
-            todoServiceMock.Verify(s => s.GetTodoAllAsync(1), Times.Once);
+            // Assert
+            Assert.True(res.Value!.Successful);
+            ServiceMock.Verify(s => s.GetTodoAllAsync(1), Times.Once);
         }
 
         [Fact]
         public async Task GetTodoByIdAsync_WithExistingId_ReturnsTodo()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.GetTodoByIdAsync(1,1))
-                .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, SingleData = new TodoResponseDTO() });
+            // Arrange
+            ServiceMock.Setup(s => s.GetTodoByIdAsync(1, 1))
+                       .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, SingleData = new TodoResponseDTO() });
+            Authenticate(role: "Admin");
 
-            var controller = new TodoController(todoServiceMock.Object);
+            // Act
+            var result = await Controller.GetTodoByIdAsync(1);
 
-            // Simula usuario autenticado con userId = 1
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Role, "Admin")
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-
-            var result = await controller.GetTodoByIdAsync(1);
-
-            Assert.NotNull(result.Value);
+            // Assert
             Assert.True(result.Value!.Successful);
-            todoServiceMock.Verify(s => s.GetTodoByIdAsync(1, 1), Times.Once);
+            ServiceMock.Verify(s => s.GetTodoByIdAsync(1, 1), Times.Once);
         }
 
         [Fact]
         public async Task GetTodoByIdAsync_WithNonExistingId_ReturnsError()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.GetTodoByIdAsync(99,1))
-                .ReturnsAsync(new Response<TodoResponseDTO> { Successful = false, Errors = new() { "No encontrado" } });
+            // Arrange
+            ServiceMock.Setup(s => s.GetTodoByIdAsync(99, 1))
+                       .ReturnsAsync(new Response<TodoResponseDTO> { Successful = false, Errors = { "No encontrado" } });
+            Authenticate(role: "Admin");
 
-            var controller = new TodoController(todoServiceMock.Object);
+            // Act
+            var result = await Controller.GetTodoByIdAsync(99);
 
-
-            // Simula usuario autenticado con userId = 1
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Role, "Admin")
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-
-            var result = await controller.GetTodoByIdAsync(99);
-
-            Assert.NotNull(result.Value);
+            // Assert
             Assert.False(result.Value!.Successful);
             Assert.Contains("No encontrado", result.Value.Errors);
         }
@@ -100,91 +65,56 @@ namespace UnitTesting
         [Fact]
         public async Task FilterTodoAsync_ByStatusAndPriority_ReturnsFiltered()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            // El userId simulado será 1
+            // Arrange
             int userId = 1;
             int? status = 2;
             int? priority = null;
             string? title = null;
             DateTime? dueDate = null;
+            ServiceMock.Setup(s => s.FilterTodoAsync(userId, status, priority, title, dueDate))
+                       .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, DataList = new List<TodoResponseDTO>() });
+            Authenticate(userId);
 
-            todoServiceMock.Setup(s => s.FilterTodoAsync(userId, status, priority, title, dueDate))
-                .ReturnsAsync(new Response<TodoResponseDTO> { Successful = true, DataList = new List<TodoResponseDTO>() });
+            // Act
+            var result = await Controller.GetTodobyFilter(status, priority, title, dueDate);
 
-            var controller = new TodoController(todoServiceMock.Object);
-
-            // Simula usuario autenticado con userId = 1
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-
-            var result = await controller.GetTodobyFilter(status, priority, title, dueDate);
-
-            Assert.NotNull(result.Value);
+            // Assert
             Assert.True(result.Value!.Successful);
-            todoServiceMock.Verify(s => s.FilterTodoAsync(userId, status, priority, title, dueDate), Times.Once);
+            ServiceMock.Verify(s => s.FilterTodoAsync(userId, status, priority, title, dueDate), Times.Once);
         }
 
         [Fact]
         public async Task CreateHighPriorityTodoAsync_ReturnsSuccess()
         {
-            var todoServiceMock = new Mock<ITodoService>();
+            // Arrange
             var dto = new CreateTodoRequestDto { Title = "Alta", Description = "Prueba" };
-            todoServiceMock.Setup(s => s.AddHighPriorityTodoAsync(dto))
-                .ReturnsAsync(new Response<string> { Successful = true });
+            ServiceMock.Setup(s => s.AddHighPriorityTodoAsync(dto))
+                       .ReturnsAsync(new Response<string> { Successful = true });
+            Authenticate();
 
-            var controller = new TodoController(todoServiceMock.Object);
+            // Act
+            var result = await Controller.CreateHigh(dto);
 
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext
-                {
-                    User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, "1")
-                    }, "mock"))
-                }
-            };
-
-            var result = await controller.CreateHigh(dto);
-
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<Response<string>>(okResult.Value);
-            Assert.True(response.Successful);
+            // Assert
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var resp = Assert.IsType<Response<string>>(ok.Value);
+            Assert.True(resp.Successful);
         }
 
         [Fact]
         public async Task DeleteTodoAsync_WithExistingId_ReturnsSuccess()
         {
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.DeleteTodoAsync(1, It.IsAny<int>()))
-                .ReturnsAsync(new Response<string> { Successful = true, Message = "Tarea eliminado correctamente." });
+            // Arrange
+            ServiceMock.Setup(s => s.DeleteTodoAsync(1, It.IsAny<int>()))
+                       .ReturnsAsync(new Response<string> { Successful = true });
+            Authenticate(role: "Admin");
 
-            var controller = new TodoController(todoServiceMock.Object);
+            // Act
+            var result = await Controller.DeleteTodoAsync(1);
 
-            // Simula usuario autenticado con rol Admin
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, "1"),
-                new Claim(ClaimTypes.Role, "Admin")
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
-
-            var result = await controller.DeleteTodoAsync(1);
-
-            Assert.NotNull(result.Value);
+            // Assert
             Assert.True(result.Value!.Successful);
-            todoServiceMock.Verify(s => s.DeleteTodoAsync(1, It.IsAny<int>()), Times.Once);
+            ServiceMock.Verify(s => s.DeleteTodoAsync(1, It.IsAny<int>()), Times.Once);
         }
 
         [Fact]
@@ -192,35 +122,18 @@ namespace UnitTesting
         {
             // Arrange
             int userId = 1;
-            var todoServiceMock = new Mock<ITodoService>();
-            todoServiceMock.Setup(s => s.ContarTareasCompletadasAsync(userId))
-                .ReturnsAsync(75.0);
-
-            var controller = new TodoController(todoServiceMock.Object);
-
-            // Simula usuario autenticado con userId = 1
-            var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            }, "mock"));
-
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = user }
-            };
+            ServiceMock.Setup(s => s.ContarTareasCompletadasAsync(userId))
+                       .ReturnsAsync(75.0);
+            Authenticate(userId);
 
             // Act
-            var result = await controller.GetPorcentajeCompletadas();
+            var ok = await Controller.GetPorcentajeCompletadas();
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
-
-            // Aquí, okResult.Value es un objeto anónimo, así que usa reflection o dynamic
-            var porcentaje = okResult.Value.GetType().GetProperty("PorcentajeCompletadas")?.GetValue(okResult.Value, null);
-            Assert.Equal(75.0, (double)porcentaje);
-
-            todoServiceMock.Verify(s => s.ContarTareasCompletadasAsync(userId), Times.Once);
+            var result = Assert.IsType<OkObjectResult>(ok);
+            var pct = (double)result.Value!.GetType().GetProperty("PorcentajeCompletadas")!.GetValue(result.Value, null)!;
+            Assert.Equal(75.0, pct);
+            ServiceMock.Verify(s => s.ContarTareasCompletadasAsync(userId), Times.Once);
         }
     }
 }
